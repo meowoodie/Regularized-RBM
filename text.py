@@ -30,21 +30,23 @@ class Documents(object):
 	It's mainly used to load the documents and help substantiate gensim's
 	dictionary and corpus.
 
-	Essentially, a documents object is simply an iterable, where each iteration
+	Essentially, a documents is simply an iterable object, where each iteration
 	step yields one document, then splits and formats their words by an unified
 	and standard method.
 	"""
 
 	def __init__(self, iter_object, n=1, pad_right=False, pad_left=False, \
-		         left_pad_symbol=None, right_pad_symbol=None, keep_sents=False):
+		         left_pad_symbol=None, right_pad_symbol=None, keep_sents=False, \
+				 is_tokenzied=True):
 		self.iter_object = iter_object
 		self.counter     = 0
 		self.n           = n
 		self.pad_right   = pad_right
 		self.pad_left    = pad_left
+		self.keep_sents  = keep_sents
 		self.left_pad_symbol  = left_pad_symbol
 		self.right_pad_symbol = right_pad_symbol
-		self.keep_sents  = keep_sents
+		self.is_tokenzied     = is_tokenzied
 
 	def __iter__(self):
 		"""
@@ -55,12 +57,15 @@ class Documents(object):
 				print >> sys.stderr, "[%s] [Documents] %s docs have been processed." % \
 				         (arrow.now(), self.counter)
 			try:
-				yield self.tokenize(line, N=self.n, \
-                                    pad_right=self.pad_right, \
-                                    pad_left=self.pad_left, \
-					                left_pad_symbol=self.left_pad_symbol, \
-					                right_pad_symbol=self.right_pad_symbol, \
-									keep_sents=self.keep_sents)
+				if self.is_tokenzied:
+					yield self.string2tokens(line, N=self.n, \
+                                             pad_right=self.pad_right, \
+                                             pad_left=self.pad_left, \
+					                         left_pad_symbol=self.left_pad_symbol, \
+					                         right_pad_symbol=self.right_pad_symbol, \
+									         keep_sents=self.keep_sents)
+				else:
+					yield self.string2sents(line)
 			# Yield empty token list if tokenization failed as UnicodeDecodeError was raised
 			except UnicodeDecodeError as e:
 				print >> sys.stderr, "[%s] [Documents] No. %s doc raise expection: %s." % \
@@ -70,17 +75,41 @@ class Documents(object):
 			self.counter += 1
 
 	@staticmethod
-	def tokenize(text_string, N=1, pad_right=False, pad_left=False, \
-		         left_pad_symbol=None, right_pad_symbol=None, keep_sents=False):
+	def string2sents(text_string):
 		"""
-		Tokenize each of the words in the text (one document).
+		Tokenize each of sentences in the text (one document as a line).
 
-		It utilizes nltk to help tokenize the sentences and the words in the
-		text. What needs to be noted is one document is consist of multiple
-		remarks, which are delimited by "/1" within the text.
+		It utilize nltk to tokenize the sentences in the text. And it will yield
+		separated sentences string in a codument iteratively. E.g.
+		doc = [ sent1_string, sent2_string, ... ]
+		"""
+		sents = []
+		# Free text part for each of the records are delimited by "\1"
+		for remark in text_string.strip().split("\1"):
+			# For every sentences in each of the free text part
+			for sent in nltk.tokenize.sent_tokenize(remark.encode('utf-8').strip()):
+				sents.append(sent)
+		return sents
+
+	@staticmethod
+	def string2tokens(text_string, N=1, pad_right=False, pad_left=False, \
+		         left_pad_symbol=None, right_pad_symbol=None, \
+				 keep_sents=False):
+		"""
+		Tokenize each of the words in the text (one document as a line).
+
+		It utilizes nltk to tokenize the sentences and the words in the text.
+		What needs to be noted is one document is consist of multiple remarks,
+		which are delimited by "/1" within the text. It will yield tokenized
+		documents iteratively. E.g.
+		doc = [ token1, token2, token3, ... ]
 
 		Also, parameters of ngrams module, like n, pad_right, pad_left,
 		left_pad_symbol, and right_pad_symbol, are optional to input.
+
+		Last but not least, you can set keep_sents True for keeping sentences
+		structure in the form of a 2D array. E.g.
+		doc = [ [ token1, token2, ... (sent1) ], [ (sent2) ], ... ]
 
 		Note:
 		If the yield documents are going to be used to generate vocabulary,
