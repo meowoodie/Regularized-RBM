@@ -117,6 +117,7 @@ class Documents(object):
 		take 1D documents as input.
 		"""
 		ngram_tokens = []
+		ngram_tokens_sents = []
 		# Free text part for each of the records are delimited by "\1"
 		for remark in text_string.strip().split("\1"):
 			# For every sentences in each of the free text part
@@ -127,20 +128,24 @@ class Documents(object):
 					for token in nltk.word_tokenize(sent.translate(None, string.punctuation).lower())
 					if token not in nltk.corpus.stopwords.words("english")]
 				# Calculate all the grams terms from unigram to N-grams
+				ngram_tokens_in_sentence = []
 				for n in range(1, N+1):
 					# Calculate ngram of a tokenized sentence
-					ngram_tokens_in_sentence = [
+					ith_gram_tokens_in_sentence = [
 						"_".join(ngram_tuple)
 						for ngram_tuple in \
 							list(ngrams(tokens_in_sentence, n, pad_right=pad_right, pad_left=pad_left, \
 								        left_pad_symbol=left_pad_symbol, \
 								        right_pad_symbol=right_pad_symbol)) ]
 					# Append ngrams terms to the list
-					if keep_sents:
-						ngram_tokens.append(ngram_tokens_in_sentence)
-					else:
-						ngram_tokens += ngram_tokens_in_sentence
-		return ngram_tokens
+					ngram_tokens += ith_gram_tokens_in_sentence
+					ngram_tokens_in_sentence += ith_gram_tokens_in_sentence
+				# Collect all ngram tokens in the sentences to ngram_tokens_sents container
+				ngram_tokens_sents.append(ngram_tokens_in_sentence)
+		if keep_sents:
+			return ngram_tokens_sents
+		else:
+			return ngram_tokens
 
 
 
@@ -187,13 +192,28 @@ def corpus_by_sentences(text_iter_obj, dictionary, \
 	docs = Documents(text_iter_obj, n=n, pad_right=pad_right, pad_left=pad_left,
 					 left_pad_symbol=left_pad_symbol,
 					 right_pad_symbol=right_pad_symbol,
-					 keep_sents=True)
+					 keep_sents=True, is_tokenzied=True)
 	# Build corpus (numeralize the documents and only keep the terms that exist in dictionary)
 	# corpus = [ [ dictionary.doc2bow(sent) for sent in doc ] for doc in docs ]
 	corpus = []
 	for doc in docs:
 		for sent in doc:
 			corpus.append(dictionary.doc2bow(sent))
+	# Calculate tfidf matrix
+	tfidf = models.TfidfModel(corpus)
+	tfidf_corpus = tfidf[corpus]
+	return tfidf_corpus
+
+def corpus_by_documents(text_iter_obj, dictionary, \
+                        n=1, pad_right=False, pad_left=False, \
+						left_pad_symbol=None, right_pad_symbol=None):
+	docs = Documents(text_iter_obj, n=n, pad_right=pad_right, pad_left=pad_left,
+					 left_pad_symbol=left_pad_symbol,
+					 right_pad_symbol=right_pad_symbol,
+					 keep_sents=False, is_tokenzied=True)
+	# Build corpus (numeralize the documents and only keep the terms that exist in dictionary)
+	# corpus = [ [ dictionary.doc2bow(sent) for sent in doc ] for doc in docs ]
+	corpus = [ dictionary.doc2bow(doc) for doc in docs ]
 	# Calculate tfidf matrix
 	tfidf = models.TfidfModel(corpus)
 	tfidf_corpus = tfidf[corpus]
