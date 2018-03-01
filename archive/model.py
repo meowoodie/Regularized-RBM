@@ -128,9 +128,16 @@ class Skipgram(object):
         start_index += self.batch_size
         return batch_input_data, batch_label_data, start_index
 
-# if __name__ == "__main__":
-#     input_data = np.array([0, 0, 2, 2, 3, 3])
-#     label_data = np.array([[1], [2], [1], [3], [2], [4]])
-#     event2vec = Event2vec(5, 3, batch_size=2, num_sampled=2, iters=10, display_step=1)
-#     with tf.Session() as sess:
-#         event2vec.train(sess, input_data, label_data)
+if __name__ == "__main__":
+
+    c  = Context("data/info.txt")
+    sc = c.spatial_context(delta=0.05)
+    input_data, label_data = c.target_context_pairs(sc)
+    print len(input_data)
+    print len(label_data)
+
+    input_data = np.array([0, 0, 2, 2, 3, 3])
+    label_data = np.array([[1], [2], [1], [3], [2], [4]])
+    event2vec = Event2vec(5, 3, batch_size=2, num_sampled=2, iters=10, display_step=1)
+    with tf.Session() as sess:
+        event2vec.train(sess, input_data, label_data)

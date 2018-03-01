@@ -51,6 +51,7 @@ class Context(object):
         #         return False
 
         gps_points = np.array([ row[4:6] for row in self.rawdata ])
+        np.savetxt("resource/embeddings/events/500-gps-points.txt", gps_points, delimiter=',')
         # Calculate pairwise distance between gps points
         dists = pdist(gps_points, "euclidean")
         # Convert distances into squareforms for easier retrival
@@ -73,6 +74,16 @@ class Context(object):
         """
         pass
 
+    def true_context(self):
+        """
+        """
+        indices = range(len(self.rawdata))
+        context = [ (row_ind, [ ind
+                                for ind, _, catagory, _, _, _ in self.rawdata
+                                if catagory == self.rawdata[row_ind][2] and catagory != "RANDOM" ])
+                    for row_ind in indices ]
+        return context
+
     @staticmethod
     def target_context_pairs(context):
         """
@@ -92,7 +103,7 @@ class Context(object):
             for cij in ci:
                 tis.append(ti)
                 cijs.append([cij])
-        return tis, cijs
+        return np.array(tis), np.array(cijs)
 
 if __name__ == "__main__":
     # Unittest for Context
