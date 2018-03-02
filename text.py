@@ -173,37 +173,6 @@ def dictionary(text_iter_obj, min_term_freq=1, \
 	dictionary.compactify()
 	return dictionary
 
-
-
-def corpus_by_sentences(text_iter_obj, dictionary, \
-                        n=1, pad_right=False, pad_left=False, \
-						left_pad_symbol=None, right_pad_symbol=None):
-	"""
-	Build
-
-	It would process the documents in the raw text file interatively by handing
-	a iterable object "text_iter_obj". It requires each line of the raw text
-	file only contains a single document. During the mean time, the function
-	would generate a dictionary file which contains all the non-stop english
-	words (vocabulary) appeared in the corpus at least "min_term_freq" times.
-	It contributes to less storage space for corpus and easier/faster corpus
-	operations.
-	"""
-	docs = Documents(text_iter_obj, n=n, pad_right=pad_right, pad_left=pad_left,
-					 left_pad_symbol=left_pad_symbol,
-					 right_pad_symbol=right_pad_symbol,
-					 keep_sents=True, is_tokenzied=True)
-	# Build corpus (numeralize the documents and only keep the terms that exist in dictionary)
-	# corpus = [ [ dictionary.doc2bow(sent) for sent in doc ] for doc in docs ]
-	corpus = []
-	for doc in docs:
-		for sent in doc:
-			corpus.append(dictionary.doc2bow(sent))
-	# Calculate tfidf matrix
-	tfidf = models.TfidfModel(corpus)
-	tfidf_corpus = tfidf[corpus]
-	return tfidf_corpus
-
 def corpus_by_documents(text_iter_obj, dictionary, \
                         n=1, pad_right=False, pad_left=False, \
 						left_pad_symbol=None, right_pad_symbol=None):
@@ -212,9 +181,56 @@ def corpus_by_documents(text_iter_obj, dictionary, \
 					 right_pad_symbol=right_pad_symbol,
 					 keep_sents=False, is_tokenzied=True)
 	# Build corpus (numeralize the documents and only keep the terms that exist in dictionary)
-	# corpus = [ [ dictionary.doc2bow(sent) for sent in doc ] for doc in docs ]
 	corpus = [ dictionary.doc2bow(doc) for doc in docs ]
 	# Calculate tfidf matrix
 	tfidf = models.TfidfModel(corpus)
 	tfidf_corpus = tfidf[corpus]
 	return tfidf_corpus
+
+def build_corpus(file_name="data/56+446.corpus.txt"):
+    with open(file_name, "r") as fhandler:
+		# Create or load a dictionary accoridingly with param n(-gram)
+		# ngram_dict = dictionary(fhandler, n=3)
+		# ngram_dict.save("resource/dict/trigram_dict")
+		ngram_dict   = corpora.Dictionary.load("resource/dict/trigram_dict")
+		print len(ngram_dict)
+		# Create or load a corpus accordingly with dictionary
+		corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=3)
+		corpora.MmCorpus.serialize("resource/corpus/trigram.doc.tfidf.corpus", corpus_tfidf)
+		print len(corpus_tfidf)
+
+        # dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
+        # np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
+        # return dense_corpus
+
+if __name__ == "__main__":
+	build_corpus()
+
+# def corpus_by_sentences(text_iter_obj, dictionary, \
+#                         n=1, pad_right=False, pad_left=False, \
+# 						left_pad_symbol=None, right_pad_symbol=None):
+# 	"""
+# 	Build
+#
+# 	It would process the documents in the raw text file interatively by handing
+# 	a iterable object "text_iter_obj". It requires each line of the raw text
+# 	file only contains a single document. During the mean time, the function
+# 	would generate a dictionary file which contains all the non-stop english
+# 	words (vocabulary) appeared in the corpus at least "min_term_freq" times.
+# 	It contributes to less storage space for corpus and easier/faster corpus
+# 	operations.
+# 	"""
+# 	docs = Documents(text_iter_obj, n=n, pad_right=pad_right, pad_left=pad_left,
+# 					 left_pad_symbol=left_pad_symbol,
+# 					 right_pad_symbol=right_pad_symbol,
+# 					 keep_sents=True, is_tokenzied=True)
+# 	# Build corpus (numeralize the documents and only keep the terms that exist in dictionary)
+# 	# corpus = [ [ dictionary.doc2bow(sent) for sent in doc ] for doc in docs ]
+# 	corpus = []
+# 	for doc in docs:
+# 		for sent in doc:
+# 			corpus.append(dictionary.doc2bow(sent))
+# 	# Calculate tfidf matrix
+# 	tfidf = models.TfidfModel(corpus)
+# 	tfidf_corpus = tfidf[corpus]
+# 	return tfidf_corpus
