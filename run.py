@@ -39,8 +39,16 @@ if __name__ == "__main__":
     with open(info_name, "r") as f:
         location = [ map(float, line.strip().split("\t")[3:]) for line in f ]
         location = np.array(location)
+        # normalization
+        for col in range(location.shape[1]):
+            max_val = max(location[:,col])
+            min_val = min(location[:,col])
+            location[:,col] = (location[:,col] - min_val) / (max_val - min_val)
+
+        print location
 
     input_data = np.concatenate((dense_corpus, location), axis=1)
+    # input_data = dense_corpus
 
     gbrbm_embeddings(input_data, n_visible=len(ngram_dict)+2, n_hidden=1000,
         file_name="corpus_location", n_epoches=10)

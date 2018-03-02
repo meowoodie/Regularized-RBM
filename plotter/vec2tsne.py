@@ -75,24 +75,24 @@ def docs_info_loader(label_path, delimiter="\t"):
 	labels = [ colorbar[labels_set.index(label)] for label in labels ]
 	return labels, annotations
 
-def update_annot(ind):
-	pos = sc.get_offsets()[ind["ind"][0]]
-	annot.xy = pos
-	text = "\n".join([annotations[i] for i in ind["ind"]])
-	annot.set_text(text)
-
-def hover(event):
-	vis = annot.get_visible()
-	if event.inaxes == ax:
-		cont, ind = sc.contains(event)
-		if cont:
-			update_annot(ind)
-			annot.set_visible(True)
-			fig.canvas.draw_idle()
-		else:
-			if vis:
-				annot.set_visible(False)
-				fig.canvas.draw_idle()
+# def update_annot(ind):
+# 	pos = sc.get_offsets()[ind["ind"][0]]
+# 	annot.xy = pos
+# 	text = "\n".join([annotations[i] for i in ind["ind"]])
+# 	annot.set_text(text)
+#
+# def hover(event):
+# 	vis = annot.get_visible()
+# 	if event.inaxes == ax:
+# 		cont, ind = sc.contains(event)
+# 		if cont:
+# 			update_annot(ind)
+# 			annot.set_visible(True)
+# 			fig.canvas.draw_idle()
+# 		else:
+# 			if vis:
+# 				annot.set_visible(False)
+# 				fig.canvas.draw_idle()
 
 # Parse the input parameters
 parser = argparse.ArgumentParser(description="Script for converting vectors to t-SNE projections")
@@ -106,9 +106,9 @@ tsne_dim = 2
 # Load labels and annotations
 labels, annotations = docs_info_loader(lab_path)
 # Load or calculate embedded vectors
-vectors = np.loadtxt(vec_path, delimiter=",").astype(int)
+vectors = np.loadtxt(vec_path, delimiter=",")
 print >> sys.stderr, "input vectors with size (%d, %d) have been loaded" % vectors.shape
-embedded_vecs = TSNE(n_components=2).fit_transform(vectors)
+embedded_vecs = TSNE(n_components=tsne_dim).fit_transform(vectors)
 print >> sys.stderr, "embeddings vectors with size (%d, %d) have been generated" % embedded_vecs.shape
 
 # np.savetxt("resource/embeddings/events/tsne-spatial-trigram-tfidf-vecs.txt", embedded_vecs, delimiter=',')
@@ -119,7 +119,9 @@ fig,ax = plt.subplots()
 cm = plt.cm.get_cmap('RdYlBu')
 
 # Plot scatter points
-sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, s=15)
+embedded_vecs = np.flip(embedded_vecs, 0)
+labels = np.flip(labels, 0)
+sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, s=20)
 # sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, vmin=0, vmax=10, s=5, cmap=cm)
 # Set initial annotations for plot
 # annot = ax.annotate("", xy=(0,0), xytext=(1,1), textcoords="offset points")
