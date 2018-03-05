@@ -130,6 +130,8 @@ class Skipgram(object):
 
 if __name__ == "__main__":
 
+    from context import Context
+
     c  = Context("data/info.txt")
     sc = c.spatial_context(delta=0.05)
     input_data, label_data = c.target_context_pairs(sc)
@@ -138,6 +140,6 @@ if __name__ == "__main__":
 
     input_data = np.array([0, 0, 2, 2, 3, 3])
     label_data = np.array([[1], [2], [1], [3], [2], [4]])
-    event2vec = Event2vec(5, 3, batch_size=2, num_sampled=2, iters=10, display_step=1)
+    model      = Skipgram(5, 3, batch_size=2, num_sampled=2, iters=10, display_step=1)
     with tf.Session() as sess:
-        event2vec.train(sess, input_data, label_data)
+        model.train(sess, input_data, label_data)
