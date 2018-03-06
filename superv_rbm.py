@@ -37,14 +37,14 @@ class SupervRBM(GBRBM):
         self.superv_lr  = superv_lr
         # initialize the computational graph of GBRBM
         GBRBM.__init__(self, n_visible, n_hidden, sample_visible, sigma, **kwargs)
-
-    def _initialize_vars(self):
-        GBRBM._initialize_vars(self)
         # initialize the weights
         if (self.init_w is not None) and \
            (self.init_vbias is not None) and \
            (self.init_hbias is not None):
             self.set_weights(self.init_w, self.init_vbias, self.init_hbias)
+
+    def _initialize_vars(self):
+        GBRBM._initialize_vars(self)
         # define your structure of supervised model below.
 
     def partial_superv_fit(self, batch_x, batch_t):
