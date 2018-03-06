@@ -26,12 +26,16 @@ def gbrbm_embeddings(input_data, n_visible, n_hidden,
 def superv_gbrbm_embeddings(input_data, label_data, n_visible, n_hidden,
     init_w=None, init_vbias=None, init_hbias=None,
     superv_lr=0.1, n_epoches=10, batch_size=20):
-    target_set = list(set(label_data))
-    print(target_set)
+    # remove random records in dataset
+    indices = [ ind for ind in range(len(label_data)) if label_data[ind] != "random" ]
+    new_input_data = input_data[indices]
+    new_label_data = label_data[indices]
+    target_set = list(set(new_label_data))
+    # fit model
     superv_rbm = NNSupervRBM(n_visible=n_visible, n_hidden=n_hidden, target_set=target_set, \
                              init_w=init_w, init_vbias=init_vbias, init_hbias=init_hbias, \
                              superv_lr=superv_lr)
-    superv_rbm.superv_fit(input_data, label_data,
+    superv_rbm.superv_fit(new_input_data, new_label_data,
                           n_epoches=n_epoches, batch_size=batch_size, shuffle=True)
     embeddings = superv_rbm.transform(input_data).round().astype(int)
     return superv_rbm, embeddings
@@ -75,24 +79,21 @@ if __name__ == "__main__":
     # generate gbrbm embeddings and get fitted model
     rbm, embeddings = gbrbm_embeddings(input_data,
         n_visible=len(ngram_dict)+2,
-        n_hidden=1000, n_epoches=10)
+        n_hidden=1000, n_epoches=8)
 
-    # remove random data records
-    indices = [ ind for ind in range(len(label_data)) if label_data[ind] != "random" ]
     init_w, init_vbias, init_hbias = rbm.get_weights()
-    new_input_data = input_data[indices]
-    new_label_data = label_data[indices]
     superv_rbm, new_embeddings = superv_gbrbm_embeddings(
-        new_input_data, new_label_data,
+        input_data, label_data,
         n_visible=len(ngram_dict)+2, n_hidden=1000,
         init_w=init_w, init_vbias=init_vbias, init_hbias=init_hbias,
-        superv_lr=0.005, n_epoches=10, batch_size=20)
+        superv_lr=0.001, n_epoches=30, batch_size=20)
 
-    # # plot weight matrix of rbm
-    # weights_matrix, vbias_array, hbias_array = rbm.get_weights()
-    # bias_matrix = np.row_stack((vbias_array[-50:], hbias_array[-50:]))
-    # mat2img(bias_matrix)
-    #
     # save embeddings
     file_name="corpus_location_supervised"
-    np.savetxt("resource/embeddings/%s.txt" % file_name, new_embeddings, delimiter=',')
+    np.savetxt("resource/embeddings/%s.txt" % file_name, embeddings, delimiter=',')
+
+    # plot weight matrix of rbm
+    weights_matrix, vbias_array, hbias_array = superv_rbm.get_weights()
+    # bias_matrix = np.row_stack((vbias_array[-50:], hbias_array[-50:]))
+    mat2img(weights_matrix)
+    mat2img(init_w)
