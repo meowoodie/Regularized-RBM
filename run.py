@@ -31,6 +31,7 @@ def superv_gbrbm_embeddings(input_data, label_data, n_visible, n_hidden,
     new_input_data = input_data[indices]
     new_label_data = label_data[indices]
     target_set = list(set(new_label_data))
+    print target_set
     # fit model
     superv_rbm = NNSupervRBM(n_visible=n_visible, n_hidden=n_hidden, target_set=target_set, \
                              init_w=init_w, init_vbias=init_vbias, init_hbias=init_hbias, \
@@ -79,14 +80,14 @@ if __name__ == "__main__":
     # generate gbrbm embeddings and get fitted model
     rbm, embeddings = gbrbm_embeddings(input_data,
         n_visible=len(ngram_dict)+2,
-        n_hidden=1000, n_epoches=8)
+        n_hidden=1000, n_epoches=2)
 
     init_w, init_vbias, init_hbias = rbm.get_weights()
     superv_rbm, new_embeddings = superv_gbrbm_embeddings(
         input_data, label_data,
         n_visible=len(ngram_dict)+2, n_hidden=1000,
         init_w=init_w, init_vbias=init_vbias, init_hbias=init_hbias,
-        superv_lr=0.001, n_epoches=30, batch_size=20)
+        superv_lr=0.001, n_epoches=10, batch_size=5)
 
     # save embeddings
     file_name="corpus_location_supervised"
@@ -95,5 +96,5 @@ if __name__ == "__main__":
     # plot weight matrix of rbm
     weights_matrix, vbias_array, hbias_array = superv_rbm.get_weights()
     # bias_matrix = np.row_stack((vbias_array[-50:], hbias_array[-50:]))
-    mat2img(weights_matrix)
-    mat2img(init_w)
+    mat2img(weights_matrix.transpose())
+    mat2img(init_w.transpose())

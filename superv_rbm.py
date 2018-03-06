@@ -132,8 +132,10 @@ class NNSupervRBM(SupervRBM):
     """
 
     def __init__(self, n_visible, n_hidden, target_set,
-        init_w=None, init_vbias=None, init_hbias=None, superv_lr=0.1,
+        init_w=None, init_vbias=None, init_hbias=None,
+        superv_lr=0.1, L1_scale=0.1,
         sample_visible=False, sigma=1, **kwargs):
+        self.L1_scale = L1_scale
         # initialize the computational graph of GBRBM
         SupervRBM.__init__(self, n_visible, n_hidden, target_set,
             init_w, init_vbias, init_hbias, superv_lr,
@@ -144,33 +146,47 @@ class NNSupervRBM(SupervRBM):
         # initialize additional input variables for supervised structure
         self.t = tf.placeholder(tf.float32, None)
         # supervised structure
-        n_hidden_1 = 256
+        n_hidden_1 = 512
+        n_hidden_2 = 256
+        n_hidden_3 = 128
         embeddings = self.compute_hidden
-        # hidden fully connected layer with 256 neurons
+        # L1 regularity layers
+        L1 = tf.contrib.layers.l1_regularizer(scale=self.L1_scale)
+        # hidden fully connected layer with n_hidden_1 neurons
         layer_1    = tf.layers.dense(embeddings, n_hidden_1)
+        # # hidden fully connected layer with n_hidden_2 neurons
+        # layer_2    = tf.layers.dense(layer_1, n_hidden_2)
+        # # hidden fully connected layer with n_hidden_3 neurons
+        # layer_3    = tf.layers.dense(layer_2, n_hidden_3)
         # add any number of layers as you want here
         out_layer  = tf.layers.dense(layer_1, len(self.target_set))
         pred_class = tf.argmax(out_layer, axis=1)
         pred_prob  = tf.nn.softmax(out_layer)
          # define loss and optimizer
-        self.superv_loss = tf.reduce_mean(
+        superv_loss = tf.reduce_mean(
             tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=out_layer, labels=tf.cast(self.t, dtype=tf.int32)))
+        L1_loss   = tf.contrib.layers.apply_regularization(L1,
+            [self.w, self.visible_bias, self.hidden_bias])
         optimizer = tf.train.GradientDescentOptimizer(
             learning_rate=self.superv_lr)
         self.superv_optimizer = optimizer.minimize(
-            self.superv_loss,
+            superv_loss,
             global_step=tf.train.get_global_step())
         # evaluate the accuracy of the model
         self.acc = tf.reduce_mean(
             tf.cast(tf.equal(pred_class, tf.cast(self.t, tf.int64)), tf.float32))
+
+        self.debug1 = pred_class
+        self.debug2 = self.t
+        self.debug3 = out_layer[0]
 
     def partial_superv_fit(self, batch_x, batch_t):
         """
         """
         # TODO: is this step necessary for updating weights in rbm?
         # unsupervised update weights of rbm by normal fitting method
-        self.partial_fit(batch_x)
+        # self.partial_fit(batch_x)
         # convert batch_t from labelings to enumerate values
         new_batch_t = np.array([ self.target_set.index(t) for t in batch_t ])
         # supervised optimization
@@ -182,24 +198,12 @@ class NNSupervRBM(SupervRBM):
         """
         # convert batch_t from labelings to enumerate values
         new_batch_t = np.array([ self.target_set.index(t) for t in batch_t ])
+
+        test1, test2, test3 = self.sess.run([self.debug1, self.debug2, self.debug3],
+            feed_dict={self.x: batch_x, self.t: new_batch_t})
+        print(test1)
+        # print(test2)
+        # print(test3)
+
         return self.sess.run(self.acc,
             feed_dict={self.x: batch_x, self.t: new_batch_t})
-
-# if __name__ == "__main__":
-
-
-
-        # convert batch_t from labelings to one-hot vectors
-        # new_batch_t = np.zeros((len(batch_t), len(self.target_set)))
-        # for ind in range(len(batch_t)):
-        #     new_batch_t[ind][self.target_set.index(batch_t[ind])]
-
-        # only keep data with target labelings in this batch
-        # indices = [ ind
-        #     for ind in range(len(batch_t))
-        #     if batch_t[ind] in self.target_set ]
-        # batch_x     = batch_x[indices]
-        # batch_t     = batch_t[indices]
-        # new_batch_t = np.zeros((len(indices), len(self.target_set)))
-        # for ind in range(len(indices)):
-        #     new_batch_t[ind][self.target_set.index(batch_t[ind])]
