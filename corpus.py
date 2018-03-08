@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-This module contains basic interface used throught the whole holmes package.
+This module contains basic interfaces used for natural language processing.
 
-The interfaces are realized as abstract base classes for the basic natural
-language processing.
+Also the script process the indicated documents and build corpus on top of that
+by default.
 """
 
 from gensim import corpora, models
+from collections import defaultdict
 from nltk.util import ngrams
 from six import iteritems
 import numpy as np
@@ -17,6 +18,9 @@ import arrow
 import nltk
 import sys
 import re
+
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -153,6 +157,7 @@ def dictionary(text_iter_obj, min_term_freq=1, \
                n=1, pad_right=False, pad_left=False, \
 			   left_pad_symbol=None, right_pad_symbol=None):
 	"""
+	Create a new dictionary in accordance with indicated raw text.
 	"""
 	# Init document object by loading an iterable object (for reading text iteratively),
 	# the iterable object could be a file handler, or standard input handler and so on
@@ -176,6 +181,10 @@ def dictionary(text_iter_obj, min_term_freq=1, \
 def corpus_by_documents(text_iter_obj, dictionary, \
                         n=1, pad_right=False, pad_left=False, \
 						left_pad_symbol=None, right_pad_symbol=None):
+	"""
+	Create a new corpus in accordance with indicated raw text (one document each
+	line) and dictionary
+	"""
 	docs = Documents(text_iter_obj, n=n, pad_right=pad_right, pad_left=pad_left,
 					 left_pad_symbol=left_pad_symbol,
 					 right_pad_symbol=right_pad_symbol,
@@ -187,21 +196,83 @@ def corpus_by_documents(text_iter_obj, dictionary, \
 	tfidf_corpus = tfidf[corpus]
 	return tfidf_corpus
 
-def build_corpus(file_name="data/56+446.corpus.txt"):
-    with open(file_name, "r") as fhandler:
-		# Create or load a dictionary accoridingly with param n(-gram)
-		# ngram_dict = dictionary(fhandler, n=3)
-		# ngram_dict.save("resource/dict/trigram_dict")
-		ngram_dict   = corpora.Dictionary.load("resource/dict/trigram_dict")
-		print len(ngram_dict)
-		# Create or load a corpus accordingly with dictionary
-		corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=3)
-		corpora.MmCorpus.serialize("resource/corpus/trigram.doc.tfidf.corpus", corpus_tfidf)
-		print len(corpus_tfidf)
+def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", N=10):
+	"""
+	Calculate the histogram for each of the ngrams that appears in the indicated
+	corpus.
+	"""
+	# target corpus with ngrams being sorted by their tfidf values
+	sorted_corpus = [ sorted(doc, key=lambda x: -x[1]) for doc in corpus ]
+	# distributions of each of ngrams in the corpus
+	ngram_dist   = defaultdict(lambda: [])
+	# build dict for distributions of each of ngrams (key=ngram_id, val=list of tfidf values)
+	for doc in sorted_corpus:
+		for ngram_id, tfidf_val in doc:
+			ngram_dist[dictionary[ngram_id]].append(tfidf_val)
+	# filter the ngrams which have less than one tfidf value
+	lowfreq_ngrams = [ ngram
+		for ngram, tfidf_set in ngram_dist.iteritems()
+		if len(tfidf_set) < 2 ]
+	for ngram in lowfreq_ngrams:
+		ngram_dist.pop(ngram)
+	# target of sorting indicated by input parameter
+	sort_target = []
+	if sort_by == "count":
+		# count of each of ngrams in the corpus
+		sort_target = [ [ ngram, len(tfidf_set) ]
+			for ngram, tfidf_set in ngram_dist.iteritems() ]
+	elif sort_by == "weighted_sum":
+		# weighted sum of each of ngrams in the corpus
+		sort_target = [ [ ngram, sum(tfidf_set) ]
+			for ngram, tfidf_set in ngram_dist.iteritems() ]
+	# sorted ngrams
+	sorted_ngram = sorted(sort_target, key=lambda x: -x[1])
+	# visualize the distributions for top N ngrams
+	import seaborn as sns
+	fig, ax = plt.subplots(1, 1)
+	sns.set(color_codes=True)
+	for ngram, value in sorted_ngram[:N]:
+		sns.distplot(ngram_dist[ngram],
+			hist=False, rug=False, ax=ax, label="%s (%f)" % (ngram, value))
+	ax.set(xlabel='tfidf value', ylabel='frequency (count)')
+	ax.legend()
+	plt.show()
+	return dict(ngram_dist)
 
-        # dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
-        # np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
-        # return dense_corpus
+
 
 if __name__ == "__main__":
-	build_corpus()
+
+	# build corpus from raw text file
+	# -------------------------------
+	corpus_name = "data/56+446.corpus.txt"
+
+	# # build dictionary
+	# with open(corpus_name, "r") as fhandler:
+	# 	ngram_dict = dictionary(fhandler, min_term_freq=3, n=2)
+	# 	ngram_dict.save("resource/dict/bigram_dict")
+
+	# load dictionary
+	ngram_dict = corpora.Dictionary.load("resource/dict/bigram_dict")
+	print len(ngram_dict)
+	# build tfidf corpus
+	corpus_tfidf = []
+	with open(corpus_name, "r") as fhandler:
+		corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=2)
+
+		# save the corpus
+		# corpora.MmCorpus.serialize("resource/corpus/trigram.doc.tfidf.corpus", corpus_tfidf)
+
+		# convert to dense corpus if necessary
+		# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
+		# np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
+
+	# statistics of ngram distribution in indicated documents
+	# -------------------------------------------------------
+	# burglary:      0:22
+	# ped robbery:   22:26
+	# dijawan_adams: 26:34
+	# jaydarious_morrison: 34:41
+	# julian_tucker: 41:48
+	# thaddeus_todd: 48:56
+	corpus_hist = corpus_histogram(corpus_tfidf[48:56], ngram_dict)
