@@ -178,6 +178,19 @@ def dictionary(text_iter_obj, min_term_freq=1, \
 	dictionary.compactify()
 	return dictionary
 
+def sub_dictionary(dictionary, ngrams_list):
+	"""
+	Return a sub dictionary by indicating a ngrams list.
+	"""
+	print len(dictionary)
+	remove_tokens = list(set(dictionary.token2id.keys()) - set(ngrams_list))
+	print len(remove_tokens)
+	remove_ids    = [ dictionary.token2id[token] for token in remove_tokens]
+	dictionary.filter_tokens(remove_ids)
+	dictionary.compactify()
+	print len(dictionary)
+	return dictionary
+
 def corpus_by_documents(text_iter_obj, dictionary, \
                         n=1, pad_right=False, pad_left=False, \
 						left_pad_symbol=None, right_pad_symbol=None):
@@ -196,7 +209,7 @@ def corpus_by_documents(text_iter_obj, dictionary, \
 	tfidf_corpus = tfidf[corpus]
 	return tfidf_corpus
 
-def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", N=10):
+def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", show=False, N=10):
 	"""
 	Calculate the histogram for each of the ngrams that appears in the indicated
 	corpus.
@@ -226,18 +239,19 @@ def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", N=10):
 		sort_target = [ [ ngram, sum(tfidf_set) ]
 			for ngram, tfidf_set in ngram_dist.iteritems() ]
 	# sorted ngrams
-	sorted_ngram = sorted(sort_target, key=lambda x: -x[1])
+	sorted_ngram = sorted(sort_target, key=lambda x: -x[1])[:N]
 	# visualize the distributions for top N ngrams
-	import seaborn as sns
-	fig, ax = plt.subplots(1, 1)
-	sns.set(color_codes=True)
-	for ngram, value in sorted_ngram[:N]:
-		sns.distplot(ngram_dist[ngram],
-			hist=False, rug=False, ax=ax, label="%s (%f)" % (ngram, value))
-	ax.set(xlabel='tfidf value', ylabel='frequency (count)')
-	ax.legend()
-	plt.show()
-	return dict(ngram_dist)
+	if show:
+		import seaborn as sns
+		fig, ax = plt.subplots(1, 1)
+		sns.set(color_codes=True)
+		for ngram, value in sorted_ngram:
+			sns.distplot(ngram_dist[ngram],
+				hist=False, rug=False, ax=ax, label="%s (%f)" % (ngram, value))
+		ax.set(xlabel='tfidf value', ylabel='frequency (count)')
+		ax.legend()
+		plt.show()
+	return dict(ngram_dist), sorted_ngram
 
 
 
@@ -245,23 +259,22 @@ if __name__ == "__main__":
 
 	# build corpus from raw text file
 	# -------------------------------
-	corpus_name = "data/56+446.corpus.txt"
+	corpus_name = "data/new.corpus.txt"
 
-	# # build dictionary
-	# with open(corpus_name, "r") as fhandler:
-	# 	ngram_dict = dictionary(fhandler, min_term_freq=3, n=2)
-	# 	ngram_dict.save("resource/dict/bigram_dict")
+	# build dictionary
+	with open(corpus_name, "r") as fhandler:
+		ngram_dict = dictionary(fhandler, min_term_freq=5, n=2)
+		ngram_dict.save("resource/dict/2k.bigram.dict")
 
 	# load dictionary
-	ngram_dict = corpora.Dictionary.load("resource/dict/bigram_dict")
-	print len(ngram_dict)
+	ngram_dict = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
 	# build tfidf corpus
 	corpus_tfidf = []
 	with open(corpus_name, "r") as fhandler:
 		corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=2)
 
 		# save the corpus
-		# corpora.MmCorpus.serialize("resource/corpus/trigram.doc.tfidf.corpus", corpus_tfidf)
+		corpora.MmCorpus.serialize("resource/corpus/2k.bigram.doc.tfidf.corpus", corpus_tfidf)
 
 		# convert to dense corpus if necessary
 		# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
@@ -269,10 +282,28 @@ if __name__ == "__main__":
 
 	# statistics of ngram distribution in indicated documents
 	# -------------------------------------------------------
-	# burglary:      0:22
-	# ped robbery:   22:26
-	# dijawan_adams: 26:34
-	# jaydarious_morrison: 34:41
-	# julian_tucker: 41:48
-	# thaddeus_todd: 48:56
-	corpus_hist = corpus_histogram(corpus_tfidf[48:56], ngram_dict)
+	burglary      = [0,22]
+	ped_robbery   = [22,26]
+	dijawan_adams = [26,34]
+	julian_tucker = [41,48]
+	thaddeus_todd = [48,56]
+	jaydarious_morrison = [34,41]
+
+	# plot distribution of ngrams for a specific sub-corpus
+	# corpus_histogram(
+	# 	scorpus_tfidf[burglary[0]:burglary[1]], ngram_dict,
+	# 	sort_by="weighted_sum", show=True, N=10)
+
+	# # get sub vocabulary which consis of top N weighted sum ngrams from each of
+	# # crime series
+	# # --------------------------------------------------------------------------
+	# labeled_series = [
+	# 	burglary, ped_robbery, dijawan_adams,
+	# 	julian_tucker, thaddeus_todd, jaydarious_morrison ]
+	# ngrams = []
+	# for serie in labeled_series:
+	# 	_, ngrams_values = corpus_histogram(corpus_tfidf[serie[0]:serie[1]], ngram_dict,
+	# 		sort_by="weighted_sum", show=False, N=20)
+	# 	ngrams += [ item[0] for item in ngrams_values ]
+	# mini_dict = sub_dictionary(ngram_dict, ngrams)
+	# mini_dict.save("resource/dict/mini_bigram_dict")
