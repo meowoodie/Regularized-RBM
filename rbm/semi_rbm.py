@@ -25,7 +25,6 @@ class SemiSupervRBM:
                  n_x, # number of unsupervised (gaussian) visible units
                  n_h, # number of bernoulli hidden units
                  alpha=0.1,
-                 batch_size=2,
                  sample_visible=False,
                  learning_rate=0.01,
                  momentum=0.95,
@@ -45,7 +44,6 @@ class SemiSupervRBM:
         self.momentum       = momentum
         self.sample_visible = sample_visible
         self.alpha          = alpha
-        self.batch_size     = batch_size
 
         # input parameters
         self.x = tf.placeholder(tf.float32, [None, self.n_x])
@@ -75,19 +73,19 @@ class SemiSupervRBM:
 
         self._initialize_vars()
 
-        # assert self.update_weights is not None
-        # assert self.update_deltas is not None
-        # assert self.compute_hidden is not None
-        # assert self.compute_visible is not None
-        # assert self.compute_visible_from_hidden is not None
+        assert self.update_weights is not None
+        assert self.update_deltas is not None
+        assert self.compute_hidden is not None
+        assert self.compute_visible is not None
+        assert self.compute_visible_from_hidden is not None
 
-        # if err_function == 'cosine':
-        #     x1_norm = tf.nn.l2_normalize(self.x, 1)
-        #     x2_norm = tf.nn.l2_normalize(self.compute_visible, 1)
-        #     cos_val = tf.reduce_mean(tf.reduce_sum(tf.mul(x1_norm, x2_norm), 1))
-        #     self.compute_err = tf.acos(cos_val) / tf.constant(np.pi)
-        # else:
-        #     self.compute_err = tf.reduce_mean(tf.square(self.x - self.compute_visible))
+        if err_function == 'cosine':
+            x1_norm = tf.nn.l2_normalize(self.x, 1)
+            x2_norm = tf.nn.l2_normalize(self.compute_visible, 1)
+            cos_val = tf.reduce_mean(tf.reduce_sum(tf.mul(x1_norm, x2_norm), 1))
+            self.compute_err = tf.acos(cos_val) / tf.constant(np.pi)
+        else:
+            self.compute_err = tf.reduce_mean(tf.square(self.x - self.compute_visible))
 
         # init all defined variables before training
         init = tf.global_variables_initializer()
@@ -95,9 +93,9 @@ class SemiSupervRBM:
         self.sess.run(init)
 
     def test(self):
-        y = [[1,0,0], [1,0,0]]
+        y = [[1,0,0], [0,1,0]]
         x = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.1, 0.2, 0.3, 0.4, 0.5],
-             [0.1, 0.2, 0.3, 0.4, 0.5, 0.1, 0.2, 0.3, 0.4, 0.5]]
+             [0.3, 0.2, 0.1, 0.1, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2]]
         res1, res2, res3 = self.sess.run([self.debug1, self.debug2, self.debug3], feed_dict={self.y: y, self.x: x})
         print("res1")
         print(res1)
@@ -111,7 +109,7 @@ class SemiSupervRBM:
         This function defines conditional probability of h|v, and reconstruction
         conditional probability of v|h and h|v.
         """
-        # training momentum
+        # training momentum function
         def f(x_old, x_new):
             return self.momentum * x_old + \
                    self.learning_rate * x_new * (1 - self.momentum) / tf.to_float(tf.shape(x_new)[0])
@@ -157,7 +155,7 @@ class SemiSupervRBM:
             y_recon_part,     # iterative elements (value of unnormalized y reconstruct probability)
             dtype=tf.float32) # data type for output of fn
         # shape: (batch_size, n_y)
-        y_recon_prob   = tf.transpose(tf.reshape(y_recon_prob, [self.n_y, self.batch_size]))
+        y_recon_prob   = tf.transpose(tf.squeeze(y_recon_prob))
         # shape: (batch_size, n_x)
         x_recon_prob   = self.x_b + tf.matmul(sample_bernoulli(h_prob), tf.transpose(self.x_w))
         # shape: (batch_size, n_h)
@@ -165,40 +163,61 @@ class SemiSupervRBM:
         # shape: (n_y, batch_size, n_h)
         y_cond_x_prob  = tf.map_fn(
             lambda x: x / y_cond_x_denom,
-            y_cond_x_part,    # iterative elements (value of unnormalized y reconstruct probability)
+            y_cond_x_part,    # iterative elements (value of unnormalized y conditional probability)
             dtype=tf.float32) # data type for output of fn
-
-        self.debug1 = y_cond_x_part
-        self.debug2 = y_cond_x_denom
-        self.debug3 = y_cond_x_prob
 
         # add a gaussian random noise to x_recon_p if sample_visible is set True
         if self.sample_visible:
             x_recon_prob = sample_gaussian(x_recon_prob, self.x_sigma)
-        
-        # new_delta_y_w = f(self.delta_y_w,
-        #     self.alpha * tf.matmul(tf.transpose(self.y), h_p) -  # positive phase of gradient
-        #     tf.matmul(tf.transpose(y_recon_prob), h_recon_prob)  # negative phase of gradient
-        #     (1-self.alpha) * tf.matmul(tf.transpose(self.y), h_p)) # weighted average term of gradient
-        # new_delta_x_w = f(self.delta_x_w,
-        #     self.alpha * tf.matmul(tf.transpose(self.x/self.x_sigma), h_p) -  # positive phase of gradient
-        #     tf.matmul(tf.transpose(x_recon_prob/self.x_sigma), h_recon_prob)  # negative phase of gradient
-        #     (1-self.alpha) * ) # weighted average term of gradient
-        #
-        # update_delta_w = self.delta_w.assign(delta_w_new)
-        # update_delta_visible_bias = self.delta_visible_bias.assign(delta_visible_bias_new)
-        # update_delta_hidden_bias = self.delta_hidden_bias.assign(delta_hidden_bias_new)
-        #
-        # update_w = self.w.assign(self.w + delta_w_new)
-        # update_visible_bias = self.visible_bias.assign(self.visible_bias + delta_visible_bias_new)
-        # update_hidden_bias = self.hidden_bias.assign(self.hidden_bias + delta_hidden_bias_new)
-        #
-        # self.update_deltas = [update_delta_w, update_delta_visible_bias, update_delta_hidden_bias]
-        # self.update_weights = [update_w, update_visible_bias, update_hidden_bias]
-        #
-        # self.compute_hidden = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
-        # self.compute_visible = tf.matmul(self.compute_hidden, tf.transpose(self.w)) + self.visible_bias
-        # self.compute_visible_from_hidden = tf.matmul(self.y, tf.transpose(self.w)) + self.visible_bias
+
+        # unsuperv loglikelihood:
+        # - E_{y|x}[ E_{h|x,y} ] + E_{x,y,h}
+        # superv loglikelihood:
+        # - E_{h|x,y} + E_{y|x}[ E_{h|x,y} ]
+        # hybrid loglikelihood:
+        # E_{x,y,h} - \alpha * E_{h|x,y} + (\alpha - 1) * E_{y|x}[ E_{h|x,y} ]
+        # - <grad>_{model} + \alpha * <grad>_{data} + (1 - \alpha) * p(y|x) * <grad>_{data}
+
+        # update weights by gradient
+        delta_y_w_new = f(self.delta_y_w,
+            self.alpha * tf.matmul(tf.transpose(self.y), h_prob) - # positive phase of data gradient
+            tf.matmul(tf.transpose(y_recon_prob), h_recon_prob) +  # negative phase of model gradient
+            (1-self.alpha) *
+                tf.matmul(tf.transpose(self.y), h_prob))           # weighted average of data gradient
+        delta_x_w_new = f(self.delta_x_w,
+            self.alpha * tf.matmul(tf.transpose(self.x/self.x_sigma), h_prob) - # positive phase of data gradient
+            tf.matmul(tf.transpose(x_recon_prob), h_recon_prob) +               # negative phase of model gradient
+            (1-self.alpha) *
+                tf.matmul(tf.transpose(self.x/self.x_sigma), h_prob))           # weighted average of data gradient
+
+        delta_y_b_new = f(self.delta_y_b, tf.reduce_mean(self.y - y_recon_prob, axis=0))
+        delta_x_b_new = f(self.delta_x_b, tf.reduce_mean(self.x - x_recon_prob, axis=0))
+        delta_h_b_new = f(self.delta_h_b, tf.reduce_mean(h_prob - h_recon_prob, axis=0))
+
+        update_delta_y_w = self.delta_y_w.assign(delta_y_w_new)
+        update_delta_x_w = self.delta_x_w.assign(delta_x_w_new)
+        update_delta_y_b = self.delta_y_b.assign(delta_y_b_new)
+        update_delta_x_b = self.delta_x_b.assign(delta_x_b_new)
+        update_delta_h_b = self.delta_h_b.assign(delta_h_b_new)
+
+        update_y_w = self.y_w.assign(self.y_w + delta_y_w_new)
+        update_x_w = self.x_w.assign(self.x_w + delta_x_w_new)
+        update_y_b = self.y_b.assign(self.y_b + delta_y_b_new)
+        update_x_b = self.x_b.assign(self.x_b + delta_x_b_new)
+        update_h_b = self.h_b.assign(self.h_b + delta_h_b_new)
+
+        self.update_deltas = [update_delta_y_w, update_delta_x_w,
+            update_delta_y_b, update_delta_x_b, update_delta_h_b]
+        self.update_weights = [update_y_w, update_x_w,
+            update_y_b, update_x_b, update_h_b]
+
+        self.compute_hidden = tf.nn.sigmoid(tf.matmul(self.x, self.x_w) + self.h_b)
+        self.compute_visible = tf.matmul(self.compute_hidden, tf.transpose(self.x_w)) + self.x_b
+        self.compute_visible_from_hidden = tf.matmul(self.h, tf.transpose(self.x_w)) + self.x_b
+
+        # self.debug1 = y_recon_prob
+        # self.debug2 = tf.shape(y_recon_prob)
+        # self.debug3 = y_recon_prob
 
     def get_err(self, batch_x):
         return self.sess.run(self.compute_err, feed_dict={self.x: batch_x})
@@ -212,11 +231,10 @@ class SemiSupervRBM:
     def reconstruct(self, batch_x):
         return self.sess.run(self.compute_visible, feed_dict={self.x: batch_x})
 
-    def partial_fit(self, batch_x):
-        self.sess.run(self.update_weights + self.update_deltas, feed_dict={self.x: batch_x})
+    def partial_fit(self, batch_x, batch_y):
+        self.sess.run(self.update_weights + self.update_deltas, feed_dict={self.x: batch_x, self.y: batch_y})
 
-    def fit(self,
-        data_x, data_t,
+    def fit(self, data_x, data_y,
         n_epoches=10, batch_size=10, shuffle=True):
         """
         A customized fitting method for supervised learning RBM. There are only
@@ -235,11 +253,11 @@ class SemiSupervRBM:
         # prepare for shuffling the dataset
         if shuffle:
             data_x_cpy = data_x.copy()
-            data_t_cpy = data_t.copy()
+            data_y_cpy = data_y.copy()
             inds = np.arange(n_data)
         else:
             data_x_cpy = data_x
-            data_t_cpy = data_t
+            data_y_cpy = data_y
 
         # logging the training errors
         # errs = []
@@ -249,7 +267,7 @@ class SemiSupervRBM:
             if shuffle:
                 np.random.shuffle(inds)
                 data_x_cpy = data_x_cpy[inds]
-                data_t_cpy = data_t_cpy[inds]
+                data_y_cpy = data_y_cpy[inds]
 
             # init the array of errors of each epoches
             epoch_errs = np.zeros((n_batches,))
@@ -258,10 +276,10 @@ class SemiSupervRBM:
             # iterate each batch of dataset
             for b in range(n_batches):
                 batch_x = data_x_cpy[b*batch_size:(b+1)*batch_size]
-                batch_t = data_t_cpy[b*batch_size:(b+1)*batch_size]
-                self.partial_fit(batch_x, batch_t) # supervised fitting partially
-                batch_err = self.get_err(batch_x)         # get errors after one batch training
-                batch_acc = self.get_superv_acc(batch_x, batch_t)
+                batch_y = data_y_cpy[b*batch_size:(b+1)*batch_size]
+                self.partial_fit(batch_x, batch_y) # supervised fitting partially
+                batch_err = self.get_err(batch_x)  # get errors after one batch training
+                batch_acc = self.get_superv_acc(batch_x, batch_y)
                 epoch_errs[epoch_ind] = batch_err
                 epoch_accs[epoch_ind] = batch_acc
                 epoch_ind += 1
@@ -276,33 +294,34 @@ class SemiSupervRBM:
         # return errs
 
     def get_weights(self):
-        return self.sess.run(self.w),\
-            self.sess.run(self.bvisible_bias),\
-            self.sess.run(self.gvisible_bias),\
-            self.sess.run(self.hidden_bias)
+        return self.sess.run(self.y_w),\
+               self.sess.run(self.x_w),\
+               self.sess.run(self.y_b),\
+               self.sess.run(self.x_b), \
+               self.sess.run(self.h_b)
 
-    def save_weights(self, filename, name):
-        saver = tf.train.Saver({name + '_w':  self.w,
-                                name + '_bv': self.bvisible_bias,
-                                name + '_gv': self.gvisible_bias,
-                                name + '_h':  self.hidden_bias})
-        return saver.save(self.sess, filename)
+    # def save_weights(self, filename, name):
+    #     saver = tf.train.Saver({name + '_w':  self.w,
+    #                             name + '_bv': self.bvisible_bias,
+    #                             name + '_gv': self.gvisible_bias,
+    #                             name + '_h':  self.hidden_bias})
+    #     return saver.save(self.sess, filename)
 
-    def set_weights(self, w, bvisible_bias, gvisible_bias, hidden_bias):
-        self.sess.run(self.w.assign(w))
-        self.sess.run(self.bvisible_bias.assign(bvisible_bias))
-        self.sess.run(self.gvisible_bias.assign(gvisible_bias))
-        self.sess.run(self.hidden_bias.assign(hidden_bias))
+    # def set_weights(self, w, bvisible_bias, gvisible_bias, hidden_bias):
+    #     self.sess.run(self.w.assign(w))
+    #     self.sess.run(self.bvisible_bias.assign(bvisible_bias))
+    #     self.sess.run(self.gvisible_bias.assign(gvisible_bias))
+    #     self.sess.run(self.hidden_bias.assign(hidden_bias))
 
-    def load_weights(self, filename, name):
-        saver = tf.train.Saver({name + '_w':  self.w,
-                                name + '_bv': self.bvisible_bias,
-                                name + '_gv': self.gvisible_bias,
-                                name + '_h':  self.hidden_bias})
-        saver.restore(self.sess, filename)
+    # def load_weights(self, filename, name):
+    #     saver = tf.train.Saver({name + '_w':  self.w,
+    #                             name + '_bv': self.bvisible_bias,
+    #                             name + '_gv': self.gvisible_bias,
+    #                             name + '_h':  self.hidden_bias})
+    #     saver.restore(self.sess, filename)
 
 if __name__ == "__main__":
     rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.1, batch_size=2, \
                         learning_rate=0.01, momentum=0.95, err_function='mse', \
                         sample_visible=False)
-    rbm.test()
+    # rbm.test()
