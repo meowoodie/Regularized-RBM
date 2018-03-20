@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 # TODO: uncomment this line in production environment
-# tf.set_random_seed(100)
+# tf.set_random_seed(1)
 
 def tf_xavier_init(fan_in, fan_out, const=1.0, dtype=np.float32):
     k = const * np.sqrt(6.0 / (fan_in + fan_out))

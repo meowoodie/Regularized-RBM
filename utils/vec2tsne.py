@@ -71,22 +71,22 @@ def docs_info_loader(label_path, delimiter="\t"):
 			labels.append(catagory)
 			annotations.append("[%s] %s" % (doc_ind, catagory))
 
-	labels_set   = list(set(labels))
+	# labels_set   = list(set(labels))
 	color_labels = [
 		"burglary", "pedrobbery", "dijawan_adams",
 		"jaydarious_morrison", "julian_tucker", "thaddeus_todd"]
 	colorbar = ["g", "r", "c", "m", "b", "k"]
 
 	# debug
-	print len(labels_set)
+	# print len(labels_set)
 
-	# colors = []
-	# for label in labels:
-	# 	if label in color_labels:
-	# 		colors.append(colorbar[color_labels.index(label)])
-	# 	else:
-	# 		colors.append("y")
-	colors = [ labels_set.index(label) for label in labels ]
+	colors = []
+	for label in labels:
+		if label in color_labels:
+			colors.append(colorbar[color_labels.index(label)])
+		else:
+			colors.append("y")
+	# colors = [ labels_set.index(label) for label in labels ]
 
 	return colors, annotations
 
@@ -137,8 +137,8 @@ cm = plt.cm.get_cmap('RdYlBu')
 embedded_vecs = np.flip(embedded_vecs, 0) # to make labeled cases on the top of other points
 labels        = np.flip(labels, 0)
 annotations   = np.flip(annotations, 0)
-# sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, s=20)
-sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, vmin=0, vmax=len(list(set(labels))), s=20, cmap=cm)
+sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, s=20)
+# sc = plt.scatter(embedded_vecs[:, 0], embedded_vecs[:, 1], c=labels, vmin=0, vmax=len(list(set(labels))), s=20, cmap=cm)
 
 # Set initial annotations for plot
 annot = ax.annotate("", xy=(0,0), xytext=(1,1), textcoords="offset points")

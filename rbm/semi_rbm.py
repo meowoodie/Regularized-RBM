@@ -14,7 +14,7 @@ import numpy as np
 import sys
 
 # TODO: comment this line in production environment
-tf.set_random_seed(1)
+# tf.set_random_seed(1)
 
 class SemiSupervRBM:
     """
@@ -92,17 +92,17 @@ class SemiSupervRBM:
         self.sess = tf.Session()
         self.sess.run(init)
 
-    def test(self):
-        y = [[1,0,0], [0,1,0]]
-        x = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.1, 0.2, 0.3, 0.4, 0.5],
-             [0.3, 0.2, 0.1, 0.1, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2]]
-        res1, res2, res3 = self.sess.run([self.debug1, self.debug2, self.debug3], feed_dict={self.y: y, self.x: x})
-        print("res1")
-        print(res1)
-        print("res2")
-        print(res2)
-        print("res3")
-        print(res3)
+    # def test(self):
+    #     y = [[1,0,0], [0,1,0]]
+    #     x = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.1, 0.2, 0.3, 0.4, 0.5],
+    #          [0.3, 0.2, 0.1, 0.1, 0.5, 0.4, 0.5, 0.4, 0.3, 0.2]]
+    #     res1, res2, res3 = self.sess.run([self.debug1, self.debug2, self.debug3], feed_dict={self.y: y, self.x: x})
+    #     print("res1")
+    #     print(res1)
+    #     print("res2")
+    #     print(res2)
+    #     print("res3")
+    #     print(res3)
 
     def _initialize_vars(self):
         """
@@ -243,7 +243,7 @@ class SemiSupervRBM:
         """
         assert n_epoches  > 0
         assert batch_size > 0
-        assert len(data_t) == len(data_x)
+        assert len(data_y) == len(data_x)
 
         # number of data records
         n_data    = data_x.shape[0]
@@ -271,7 +271,7 @@ class SemiSupervRBM:
 
             # init the array of errors of each epoches
             epoch_errs = np.zeros((n_batches,))
-            epoch_accs = np.zeros((n_batches,))
+            # epoch_accs = np.zeros((n_batches,))
             epoch_ind  = 0
             # iterate each batch of dataset
             for b in range(n_batches):
@@ -279,17 +279,17 @@ class SemiSupervRBM:
                 batch_y = data_y_cpy[b*batch_size:(b+1)*batch_size]
                 self.partial_fit(batch_x, batch_y) # supervised fitting partially
                 batch_err = self.get_err(batch_x)  # get errors after one batch training
-                batch_acc = self.get_superv_acc(batch_x, batch_y)
+                # batch_acc = self.get_superv_acc(batch_x, batch_y)
                 epoch_errs[epoch_ind] = batch_err
-                epoch_accs[epoch_ind] = batch_acc
+                # epoch_accs[epoch_ind] = batch_acc
                 epoch_ind += 1
 
             # get mean of errors in this epoch
             err_mean = epoch_errs.mean()
-            acc_mean = epoch_accs.mean()
+            # acc_mean = epoch_accs.mean()
             print("Epoch: {:d}".format(e), file=sys.stderr)
             print("Train error: {:.4f}".format(err_mean), file=sys.stderr)
-            print("Train acc: {:.4f}".format(acc_mean), file=sys.stderr)
+            # print("Train acc: {:.4f}".format(acc_mean), file=sys.stderr)
             # errs = np.hstack([errs, epoch_errs])
         # return errs
 
