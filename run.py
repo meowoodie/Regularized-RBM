@@ -21,7 +21,7 @@ if __name__ == "__main__":
     corpus_tfidf = corpora.MmCorpus(corpus_name)
 
     # get corpus matrix
-    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
+    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:2000]
     n_x    = data_x.shape[1]
     print(data_x.shape)
 
@@ -35,14 +35,15 @@ if __name__ == "__main__":
     data_y    = []
     for label in labels:
         d = np.zeros(n_y)
-        d[label_set.index(label)] = 1
+        d[label_set.index(label)] = 1.
         data_y.append(d)
-    data_y    = np.array(data_y)
+    data_y    = np.array(data_y)[0:2000]
 
-    rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=0.1, \
+    print(data_y.shape)
+    rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=.15, batch_size=100, \
                         learning_rate=0.005, momentum=0.95, err_function='mse', \
                         sample_visible=False)
-    rbm.fit(data_x, data_y, n_epoches=10, batch_size=100, shuffle=True)
+    rbm.fit(data_x, data_y, n_epoches=10, shuffle=True)
     embeddings = rbm.transform(data_x).round().astype(int)
 
     # save embeddings
