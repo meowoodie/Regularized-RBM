@@ -175,18 +175,36 @@ class SemiSupervRBM:
         h_recon_prob   = tf.nn.sigmoid(self.h_b + tf.matmul(y_recon_prob, self.y_w) + tf.matmul(x_recon_prob, self.x_w))
         # normalize y_cond_x over all batches
         # shape: (n_y, n_h) (expand and duplicated from (n_y, 1))
-        y_cond_x_prob  = tf.tile(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), [1, self.n_h])
+        # y_cond_x_prob  = tf.tile(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), [1, self.n_h])
+        # shape: (n_y, batch_size, 1) (expand and duplicated from (n_y, 1))
+        y_cond_x_prob  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), 1), [1, self.batch_size, 1])
 
         # add a gaussian random noise to x_recon_p if sample_visible is set True
         if self.sample_visible:
             x_recon_prob = sample_gaussian(x_recon_prob, self.x_sigma)
 
-        # update weights by gradient
         # delta_y_w_new = f(self.delta_y_w,
         #     (self.alpha * y_cond_x_prob) *
         #     tf.matmul(tf.transpose(self.y), h_prob) -            # positive phase of data gradient
         #     tf.matmul(tf.transpose(y_recon_prob), h_recon_prob)) # negative phase of model gradient
-        delta_y_w_new = f(self.delta_y_w, )
+
+        y_cond_x_factor_1 = tf.map_fn(
+            lambda i: tf.reduce_sum(tf.nn.sigmoid(
+                tf.tile(tf.expand_dims(tf.expand_dims(self.y_w[i, :], 1), 2), [1, self.batch_size, 1]) +
+                precomp_part), axis=0),
+            np.arange(self.n_y), # iterative elements (index of y nodes)
+            dtype=tf.float32)    # data type for output of fn
+        y_cond_x_factor_2  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_factor_1 * y_cond_x_prob, axis=0), 0), [self.n_y, 1, 1])
+        y_cond_x_factor    = tf.transpose(tf.squeeze(y_cond_x_factor_1 - y_cond_x_factor_2))
+        y_cond_x_grad      = tf.reduce_sum(tf.map_fn(
+            lambda n: tf.tile(tf.expand_dims(self.y[n] * y_cond_x_factor[n], 1), [1, self.n_h]) ,
+            np.arange(self.batch_size),
+            dtype=tf.float32), axis=0)
+
+        # update weights by gradient
+        delta_y_w_new = f(self.delta_y_w, self.alpha * y_cond_x_grad +
+            tf.matmul(tf.transpose(self.y), h_prob) -
+            tf.matmul(tf.transpose(y_recon_prob), h_recon_prob))
         delta_x_w_new = f(self.delta_x_w,
             tf.matmul(tf.transpose(self.x/self.x_sigma), h_prob) - # positive phase of data gradient
             tf.matmul(tf.transpose(x_recon_prob), h_recon_prob))   # negative phase of model gradient
@@ -217,14 +235,16 @@ class SemiSupervRBM:
         self.compute_x = tf.matmul(self.compute_h, tf.transpose(self.x_w)) + self.x_b
         self.compute_visible_from_hidden = tf.matmul(self.h, tf.transpose(self.x_w)) + self.x_b
 
-    # def test(self):
-    #     batch_x = [
-    #         [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
-    #         [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5]
-    #     ]
-    #     batch_y = [[1,0,0], [0,0,1]]
-    #     res = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y:batch_y})
-    #     print(res)
+        self.debug = self.compute_y
+
+    def test(self):
+        batch_x = [
+            [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+            [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5]
+        ]
+        batch_y = [[1,0,0], [0,0,1]]
+        res = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y:batch_y})
+        print(res)
 
     def get_recon_err(self, batch_x):
         return self.sess.run(self.compute_err, feed_dict={self.x: batch_x})
@@ -234,8 +254,10 @@ class SemiSupervRBM:
         res1 = [ r.index(1.0) for r in res1 ]
         res2 = self.sess.run(self.y, feed_dict={self.x: batch_x, self.y: batch_y}).tolist()
         res2 = [ r.index(1.0) for r in res2 ]
+        res3 = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y: batch_y})
         print(res1)
         print(res2)
+        print(res3)
         return self.sess.run(self.compute_acc, feed_dict={self.x: batch_x, self.y: batch_y})
 
     def transform(self, batch_x):
@@ -339,8 +361,8 @@ class SemiSupervRBM:
     #                             name + '_h':  self.hidden_bias})
     #     saver.restore(self.sess, filename)
 
-# if __name__ == "__main__":
-#     rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.1, batch_size=2, \
-#                         learning_rate=0.01, momentum=0.95, err_function='mse', \
-#                         sample_visible=False)
-#     rbm.test()
+if __name__ == "__main__":
+    rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.1, batch_size=2, \
+                        learning_rate=0.01, momentum=0.95, err_function='mse', \
+                        sample_visible=False)
+    rbm.test()
