@@ -40,10 +40,10 @@ if __name__ == "__main__":
     data_y    = np.array(data_y)[0:2000]
 
     print(data_y.shape)
-    rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=.001, batch_size=100, \
-                        learning_rate=0.005, momentum=0.95, err_function='mse', \
+    rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=1., batch_size=50, \
+                        learning_rate=.1, momentum=0.95, err_function='mse', \
                         sample_visible=False)
-    rbm.fit(data_x, data_y, n_epoches=10, shuffle=True)
+    rbm.fit(data_x, data_y, n_epoches=1000, shuffle=True)
     embeddings = rbm.transform(data_x).round().astype(int)
 
     # save embeddings

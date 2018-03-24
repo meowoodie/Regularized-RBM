@@ -68,11 +68,12 @@ class SemiSupervRBM:
         self.delta_x_b = tf.Variable(tf.zeros([self.n_x]), dtype=tf.float32)
         self.delta_h_b = tf.Variable(tf.zeros([self.n_h]), dtype=tf.float32)
 
-        self.update_weights  = None
-        self.update_deltas   = None
-        self.compute_hidden  = None
-        self.compute_visible = None
-        self.compute_visible_from_hidden = None
+        self.update_weights = None
+        self.update_deltas  = None
+        self.compute_h = None
+        self.compute_x = None
+        self.compute_y = None
+        # self.compute_visible_from_hidden = None
 
         self._initialize_vars()
 
@@ -95,42 +96,44 @@ class SemiSupervRBM:
            self.compute_y,
            tf.expand_dims(tf.reduce_max(self.compute_y, axis=1), 1)), dtype=tf.float32)
         # campute accuracy of prediction of y
-        # self.compute_acc = tf.reduce_mean(tf.cumprod(tf.cast(tf.equal(
-        #     self.y, recon_y), dtype=tf.float32), axis=1)[:, -1])
-        self.compute_acc = recon_y
+        self.compute_acc = tf.reduce_mean(tf.cumprod(tf.cast(tf.equal(
+            self.y, recon_y), dtype=tf.float32), axis=1)[:, -1])
+
+        self.debug = recon_y
 
         # init all defined variables before training
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
 
-    def _initialize_vars(self):
+    def get_y_recon_prob(self, h):
         """
-        This function defines conditional probability of h|v, and reconstruction
-        conditional probability of v|h and h|v.
+        Calculate reconstructed probability of y given input h. Usually, h could
+        be `sample_bernoulli(h_prob)` (computed by input x and y)
         """
-        # training momentum function
-        def f(x_old, x_new):
-            return self.momentum * x_old + \
-                   self.learning_rate * x_new * (1 - self.momentum) / tf.to_float(tf.shape(x_new)[0])
-
-        # probability for hidden layer
-        h_prob = tf.nn.sigmoid(self.h_b + tf.matmul(self.y, self.y_w) + tf.matmul(self.x/self.x_sigma, self.x_w))
-
         # preparation for the probability of y|h and y|x
         # numerator of y_recon_prob
         # exp( y_b + \sum_j U_jy h_j )
         # shape: (n_y, batch_size, 1)
-        y_recon_part   = tf.map_fn(
+        y_recon_part  = tf.map_fn(
             lambda i: tf.exp(self.y_b[i] + tf.matmul(
-                sample_bernoulli(h_prob),
+                h,
                 tf.transpose(tf.slice(self.y_w, [i, 0], [1, self.n_h])))),
             np.arange(self.n_y), # iterative elements (index of y nodes)
             dtype=tf.float32)    # data type for output of fn
         # denominator of y_recon_prob
         # shape: (batch_size, 1)
-        y_recon_denom  = tf.reduce_sum(y_recon_part, axis=0)
+        y_recon_denom = tf.reduce_sum(y_recon_part, axis=0)
+        # reconstructed probability for both hidden & visible layers
+        # shape: (n_y, batch_size, 1)
+        y_recon_prob  = tf.map_fn(
+            lambda x: x / y_recon_denom,
+            y_recon_part,     # iterative elements (value of unnormalized y reconstruct probability)
+            dtype=tf.float32) # data type for output of fn
+        # shape: (batch_size, n_y)
+        return tf.transpose(tf.squeeze(y_recon_prob))
 
+    def get_y_cond_x_grad(self):
         # TODO: make sure using x or recon_x?
         # precomputing b_j + \sum_i w_jk x_k
         # shape: (n_h, batch_size, 1)
@@ -156,37 +159,17 @@ class SemiSupervRBM:
         # shape: (batch_size, 1)
         y_cond_x_denom = tf.reduce_sum(y_cond_x_part, axis=0)
 
-        # reconstructed probability for both hidden & visible layers
-        # shape: (n_y, batch_size, 1)
-        y_recon_prob   = tf.map_fn(
-            lambda x: x / y_recon_denom,
-            y_recon_part,     # iterative elements (value of unnormalized y reconstruct probability)
-            dtype=tf.float32) # data type for output of fn
         # shape: (n_y, batch_size, 1)
         y_cond_x_prob  = tf.map_fn(
             lambda x: x / y_cond_x_denom,
             y_cond_x_part,    # iterative elements (value of unnormalized y conditional probability)
             dtype=tf.float32) # data type for output of fn
-        # shape: (batch_size, n_y)
-        y_recon_prob   = tf.transpose(tf.squeeze(y_recon_prob))
-        # shape: (batch_size, n_x)
-        x_recon_prob   = self.x_b + tf.matmul(sample_bernoulli(h_prob), tf.transpose(self.x_w))
-        # shape: (batch_size, n_h)
-        h_recon_prob   = tf.nn.sigmoid(self.h_b + tf.matmul(y_recon_prob, self.y_w) + tf.matmul(x_recon_prob, self.x_w))
+
         # normalize y_cond_x over all batches
         # shape: (n_y, n_h) (expand and duplicated from (n_y, 1))
         # y_cond_x_prob  = tf.tile(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), [1, self.n_h])
         # shape: (n_y, batch_size, 1) (expand and duplicated from (n_y, 1))
         y_cond_x_prob  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), 1), [1, self.batch_size, 1])
-
-        # add a gaussian random noise to x_recon_p if sample_visible is set True
-        if self.sample_visible:
-            x_recon_prob = sample_gaussian(x_recon_prob, self.x_sigma)
-
-        # delta_y_w_new = f(self.delta_y_w,
-        #     (self.alpha * y_cond_x_prob) *
-        #     tf.matmul(tf.transpose(self.y), h_prob) -            # positive phase of data gradient
-        #     tf.matmul(tf.transpose(y_recon_prob), h_recon_prob)) # negative phase of model gradient
 
         y_cond_x_factor_1 = tf.map_fn(
             lambda i: tf.reduce_sum(tf.nn.sigmoid(
@@ -201,6 +184,33 @@ class SemiSupervRBM:
             np.arange(self.batch_size),
             dtype=tf.float32), axis=0)
 
+        return y_cond_x_grad
+
+    def _initialize_vars(self):
+        """
+        This function defines conditional probability of h|v, and reconstruction
+        conditional probability of v|h and h|v.
+        """
+        # training momentum function
+        def f(x_old, x_new):
+            return self.momentum * x_old + \
+                   self.learning_rate * x_new * (1 - self.momentum) / tf.to_float(tf.shape(x_new)[0])
+
+        # probability for hidden layer
+        # shape: (batch_size, n_h)
+        h_prob         = tf.nn.sigmoid(self.h_b + tf.matmul(self.y, self.y_w) + tf.matmul(self.x/self.x_sigma, self.x_w))
+        # shape: (batch_size, n_y)
+        y_recon_prob   = self.get_y_recon_prob(sample_bernoulli(h_prob))
+        # shape: (batch_size, n_x)
+        x_recon_prob   = self.x_b + tf.matmul(sample_bernoulli(h_prob), tf.transpose(self.x_w))
+        # shape: (batch_size, n_h)
+        h_recon_prob   = tf.nn.sigmoid(self.h_b + tf.matmul(y_recon_prob, self.y_w) + tf.matmul(x_recon_prob, self.x_w))
+
+        # add a gaussian random noise to x_recon_p if sample_visible is set True
+        if self.sample_visible:
+            x_recon_prob = sample_gaussian(x_recon_prob, self.x_sigma)
+
+        y_cond_x_grad = self.get_y_cond_x_grad()
         # update weights by gradient
         delta_y_w_new = f(self.delta_y_w, self.alpha * y_cond_x_grad +
             tf.matmul(tf.transpose(self.y), h_prob) -
@@ -230,47 +240,30 @@ class SemiSupervRBM:
         self.update_weights = [update_y_w, update_x_w,
             update_y_b, update_x_b, update_h_b]
 
-        self.compute_h = tf.nn.sigmoid(tf.matmul(self.x, self.x_w) + self.h_b)
-        self.compute_y = tf.nn.sigmoid(tf.matmul(self.compute_h, tf.transpose(self.y_w)) + self.y_b)
+        self.compute_h = tf.nn.sigmoid(tf.matmul(self.x/self.x_sigma, self.x_w) + tf.matmul(self.y, self.y_w) + self.h_b)
+        self.compute_y = self.get_y_recon_prob(self.compute_h)
         self.compute_x = tf.matmul(self.compute_h, tf.transpose(self.x_w)) + self.x_b
-        self.compute_visible_from_hidden = tf.matmul(self.h, tf.transpose(self.x_w)) + self.x_b
 
-        self.debug = self.compute_y
-
-    def test(self):
-        batch_x = [
-            [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
-            [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5]
-        ]
-        batch_y = [[1,0,0], [0,0,1]]
-        res = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y:batch_y})
-        print(res)
-
-    def get_recon_err(self, batch_x):
-        return self.sess.run(self.compute_err, feed_dict={self.x: batch_x})
+    def get_recon_err(self, batch_x, batch_y):
+        return self.sess.run(self.compute_err, feed_dict={self.x: batch_x, self.y: batch_y})
 
     def get_superv_acc(self, batch_x, batch_y):
-        res1 = self.sess.run(self.compute_acc, feed_dict={self.x: batch_x, self.y: batch_y}).tolist()
+        res1 = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y: batch_y}).tolist()
         res1 = [ r.index(1.0) for r in res1 ]
         res2 = self.sess.run(self.y, feed_dict={self.x: batch_x, self.y: batch_y}).tolist()
         res2 = [ r.index(1.0) for r in res2 ]
-        res3 = self.sess.run(self.debug, feed_dict={self.x: batch_x, self.y: batch_y})
         print(res1)
         print(res2)
-        print(res3)
         return self.sess.run(self.compute_acc, feed_dict={self.x: batch_x, self.y: batch_y})
 
-    def transform(self, batch_x):
-        return self.sess.run(self.compute_h, feed_dict={self.x: batch_x})
+    def transform(self, batch_x, batch_y):
+        return self.sess.run(self.compute_h, feed_dict={self.x: batch_x, self.y: batch_y})
 
-    def transform_inv(self, batch_y):
-        return self.sess.run(self.compute_visible_from_hidden, feed_dict={self.y: batch_y})
+    def reconstruct_x(self, batch_x, batch_y):
+        return self.sess.run(self.compute_x, feed_dict={self.x: batch_x, self.y: batch_y})
 
-    def reconstruct_x(self, batch_x):
-        return self.sess.run(self.compute_x, feed_dict={self.x: batch_x})
-
-    def reconstruct_y(self, batch_x):
-        return self.sess.run(self.compute_y, feed_dict={self.x: batch_x})
+    def reconstruct_y(self, batch_x, batch_y):
+        return self.sess.run(self.compute_y, feed_dict={self.x: batch_x, self.y: batch_y})
 
     def partial_fit(self, batch_x, batch_y):
         self.sess.run(self.update_weights + self.update_deltas, feed_dict={self.x: batch_x, self.y: batch_y})
@@ -318,11 +311,11 @@ class SemiSupervRBM:
             for b in range(n_batches):
                 batch_x = data_x_cpy[b*self.batch_size:(b+1)*self.batch_size]
                 batch_y = data_y_cpy[b*self.batch_size:(b+1)*self.batch_size]
-                self.partial_fit(batch_x, batch_y)      # supervised fitting partially
-                batch_err = self.get_recon_err(batch_x) # get errors after one batch training
+                self.partial_fit(batch_x, batch_y)               # supervised fitting partially
+                batch_err = self.get_recon_err(batch_x, batch_y) # get errors after one batch training
                 batch_acc = self.get_superv_acc(batch_x, batch_y)
                 epoch_errs[epoch_ind] = batch_err
-                # epoch_accs[epoch_ind] = batch_acc
+                epoch_accs[epoch_ind] = batch_acc
                 epoch_ind += 1
 
             # get mean of errors in this epoch
@@ -362,7 +355,22 @@ class SemiSupervRBM:
     #     saver.restore(self.sess, filename)
 
 if __name__ == "__main__":
-    rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.1, batch_size=2, \
-                        learning_rate=0.01, momentum=0.95, err_function='mse', \
+    data_x = np.array([
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+        [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5],
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+        [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5],
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+        [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5],
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+        [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5],
+        [0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.4, 0.3, 0.2, 0.1],
+        [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5]
+    ])
+    data_y = np.array([
+        [1,0,0], [0,0,1], [1,0,0], [0,0,1], [1,0,0],
+        [0,0,1], [1,0,0], [0,0,1], [1,0,0], [0,0,1]])
+    rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.1, batch_size=5, \
+                        learning_rate=1., momentum=0.95, err_function='mse', \
                         sample_visible=False)
-    rbm.test()
+    rbm.fit(data_x, data_y, n_epoches=100, shuffle=False)
