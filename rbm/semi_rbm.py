@@ -106,7 +106,7 @@ class SemiSupervRBM:
         self.sess = tf.Session()
         self.sess.run(init)
 
-    def get_y_recon_prob(self, h):
+    def _get_y_recon_prob(self, h):
         """
         Calculate reconstructed probability of y given input h. Usually, h could
         be `sample_bernoulli(h_prob)` (computed by input x and y)
@@ -133,11 +133,14 @@ class SemiSupervRBM:
         # shape: (batch_size, n_y)
         return tf.transpose(tf.squeeze(y_recon_prob))
 
-    def get_y_cond_x_grad(self):
-        # TODO: make sure using x or recon_x?
+    def _get_y_cond_x_prob(self):
+        """
+        Calculate probability of y conditioning on given x, which would be further
+        used in gradient calculation.
+        """
         # precomputing b_j + \sum_i w_jk x_k
         # shape: (n_h, batch_size, 1)
-        precomp_part   = tf.map_fn(
+        precomp_part = tf.map_fn(
             lambda j: self.h_b[j] + tf.matmul(
                 self.x/self.x_sigma,
                 tf.slice(self.x_w, [0, j], [self.n_x, 1])),
@@ -149,27 +152,29 @@ class SemiSupervRBM:
         y_cond_x_part  = tf.map_fn(
             lambda i: tf.exp(self.y_b[i]) * \
                       tf.cumprod((1 + tf.exp(
-                        tf.tile(
-                            tf.expand_dims(tf.expand_dims(self.y_w[i, :], 1), 2),
-                            [1, self.batch_size, 1]) +
+                        tf.tile(tf.expand_dims(tf.expand_dims(self.y_w[i, :], 1), 2), [1, self.batch_size, 1]) +
                         precomp_part)) / self.beta)[-1],
             np.arange(self.n_y), # iterative elements (index of y nodes)
             dtype=tf.float32)    # data type for output of fn
         # denominator of y_recon_prob
         # shape: (batch_size, 1)
         y_cond_x_denom = tf.reduce_sum(y_cond_x_part, axis=0)
-
         # shape: (n_y, batch_size, 1)
         y_cond_x_prob  = tf.map_fn(
             lambda x: x / y_cond_x_denom,
             y_cond_x_part,    # iterative elements (value of unnormalized y conditional probability)
             dtype=tf.float32) # data type for output of fn
+        # shape: (batch_size, n_y)
+        return tf.transpose(tf.squeeze(y_cond_x_prob))
 
+    def _get_superv_grad(self):
+        """
+        Calculate supervised gradient.
+        """
         # normalize y_cond_x over all batches
-        # shape: (n_y, n_h) (expand and duplicated from (n_y, 1))
-        # y_cond_x_prob  = tf.tile(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), [1, self.n_h])
         # shape: (n_y, batch_size, 1) (expand and duplicated from (n_y, 1))
-        y_cond_x_prob  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), 1), [1, self.batch_size, 1])
+        # y_cond_x_prob  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_prob, axis=1) / tf.reduce_sum(y_cond_x_prob), 1), [1, self.batch_size, 1])
+        y_cond_x_prob = tf.tf.reduce_mean(self._get_y_cond_x_prob(), axis=0)
 
         y_cond_x_factor_1 = tf.map_fn(
             lambda i: tf.reduce_sum(tf.nn.sigmoid(
@@ -177,10 +182,10 @@ class SemiSupervRBM:
                 precomp_part), axis=0),
             np.arange(self.n_y), # iterative elements (index of y nodes)
             dtype=tf.float32)    # data type for output of fn
-        y_cond_x_factor_2  = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_factor_1 * y_cond_x_prob, axis=0), 0), [self.n_y, 1, 1])
-        y_cond_x_factor    = tf.transpose(tf.squeeze(y_cond_x_factor_1 - y_cond_x_factor_2))
-        y_cond_x_grad      = tf.reduce_sum(tf.map_fn(
-            lambda n: tf.tile(tf.expand_dims(self.y[n] * y_cond_x_factor[n], 1), [1, self.n_h]) ,
+        y_cond_x_factor_2 = tf.tile(tf.expand_dims(tf.reduce_sum(y_cond_x_factor_1 * y_cond_x_prob, axis=0), 0), [self.n_y, 1, 1])
+        y_cond_x_factor   = tf.transpose(tf.squeeze(y_cond_x_factor_1 - y_cond_x_factor_2))
+        y_cond_x_grad     = tf.reduce_sum(tf.map_fn(
+            lambda n: tf.tile(tf.expand_dims(self.y[n] * y_cond_x_factor[n], 1), [1, self.n_h]),
             np.arange(self.batch_size),
             dtype=tf.float32), axis=0)
 
@@ -200,7 +205,7 @@ class SemiSupervRBM:
         # shape: (batch_size, n_h)
         h_prob         = tf.nn.sigmoid(self.h_b + tf.matmul(self.y, self.y_w) + tf.matmul(self.x/self.x_sigma, self.x_w))
         # shape: (batch_size, n_y)
-        y_recon_prob   = self.get_y_recon_prob(sample_bernoulli(h_prob))
+        y_recon_prob   = self._get_y_recon_prob(sample_bernoulli(h_prob))
         # shape: (batch_size, n_x)
         x_recon_prob   = self.x_b + tf.matmul(sample_bernoulli(h_prob), tf.transpose(self.x_w))
         # shape: (batch_size, n_h)
@@ -235,13 +240,16 @@ class SemiSupervRBM:
         update_x_b = self.x_b.assign(self.x_b + delta_x_b_new)
         update_h_b = self.h_b.assign(self.h_b + delta_h_b_new)
 
-        self.update_deltas = [update_delta_y_w, update_delta_x_w,
+        self.update_deltas  = [update_delta_y_w, update_delta_x_w,
             update_delta_y_b, update_delta_x_b, update_delta_h_b]
         self.update_weights = [update_y_w, update_x_w,
             update_y_b, update_x_b, update_h_b]
 
+        self.update_deltas_unsuperv  = [update_delta_x_w, update_delta_x_b, update_delta_h_b]
+        self.update_weights_unsuperv = [update_x_w, update_x_b, update_h_b]
+
         self.compute_h = tf.nn.sigmoid(tf.matmul(self.x/self.x_sigma, self.x_w) + tf.matmul(self.y, self.y_w) + self.h_b)
-        self.compute_y = self.get_y_recon_prob(self.compute_h)
+        self.compute_y = self._get_y_recon_prob(self.compute_h)
         self.compute_x = tf.matmul(self.compute_h, tf.transpose(self.x_w)) + self.x_b
 
     def get_recon_err(self, batch_x, batch_y):
