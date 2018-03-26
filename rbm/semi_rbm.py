@@ -251,14 +251,14 @@ class SemiSupervRBM:
         # ----------------------------------------------------------------------
 
         # superv_grad = self._superv_grad()
-        self.t = y_cond_x_grad
+        self.t = y_cond_x_factor_1
 
         # add a gaussian random noise to x_recon_p if sample_visible is set True
         if self.sample_visible:
             x_recon_prob = sample_gaussian(x_recon_prob, self.x_sigma)
 
         # update weights by gradient
-        delta_y_w_new = f(self.delta_y_w, self.alpha * y_cond_x_grad +
+        delta_y_w_new = f(self.delta_y_w, # self.alpha * y_cond_x_grad +
             tf.matmul(tf.transpose(self.y), h_prob) -
             tf.matmul(tf.transpose(y_recon_prob), h_recon_prob))
         delta_x_w_new = f(self.delta_x_w, # self.alpha * superv_x_w_grad +
@@ -422,12 +422,12 @@ if __name__ == "__main__":
         [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5]
     ])
     data_y = np.array([
-        [1,0,0], [0,0,1], [1,0,0], [0,0,1],
-        [1,0,0], [0,0,1], [1,0,0], [0,0,1],
-        [1,0,0], [0,0,1]
+        [1,0,0], [0,1,0], [1,0,0], [0,1,0],
+        [1,0,0], [0,1,0], [1,0,0], [0,1,0],
+        [1,0,0], [0,1,0]
     ])
-    rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.2, batch_size=10, \
-                        learning_rate=.05, momentum=0.95, err_function='mse', \
+    rbm = SemiSupervRBM(n_y=3, n_x=10, n_h=5, alpha=0.01, batch_size=10, \
+                        learning_rate=.01, momentum=0.95, err_function='mse', \
                         sample_visible=False)
     # rbm.test(data_x, data_y)
-    rbm.fit(data_x, data_y, n_epoches=30, shuffle=False)
+    rbm.fit(data_x, data_y, n_epoches=300, shuffle=False)
