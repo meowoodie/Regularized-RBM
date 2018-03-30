@@ -1,6 +1,8 @@
 import tensorflow as tf
-from .rbm import RBM
-from .util import sample_bernoulli, sample_gaussian
+from rbm import RBM
+from util import sample_bernoulli, sample_gaussian
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 
 class GBRBM(RBM):
@@ -9,6 +11,14 @@ class GBRBM(RBM):
         self.sigma = sigma
 
         RBM.__init__(self, n_visible, n_hidden, **kwargs)
+
+    def regularizer(self, drop_rate=0.5):
+        # visible_mast = tf.cast(tf.abs(tf.reduce_sum(self.w, axis=1)) >= 0.025, tf.float32)
+        visible_impact = tf.reduce_sum(self.w, axis=1)
+        # threshold      = tf
+        # visible_mast   = tf.cast(visible_impact > ), tf.float32)
+        t = visible_mast
+        print(self.sess.run(t))
 
     def _initialize_vars(self):
         hidden_p = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
@@ -44,3 +54,9 @@ class GBRBM(RBM):
         self.compute_hidden = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
         self.compute_visible = tf.matmul(self.compute_hidden, tf.transpose(self.w)) + self.visible_bias
         self.compute_visible_from_hidden = tf.matmul(self.y, tf.transpose(self.w)) + self.visible_bias
+
+if __name__ == "__main__":
+    rbm = GBRBM(n_visible=10, n_hidden=5, \
+                learning_rate=0.01, momentum=0.95, err_function='mse', \
+                use_tqdm=False, sample_visible=False, sigma=1.)
+    rbm.regularize()

@@ -3,10 +3,19 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 import sys
-from .util import tf_xavier_init
+from util import tf_xavier_init
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 # TODO: uncomment this line in production environment
 # tf.set_random_seed(100)
+
+def plot_mat(w, name):
+    fig  = plt.figure()
+    ax   = fig.add_subplot(111)
+    im   = ax.imshow(w, cmap=cm.Greys_r) # , interpolation='nearest'
+    cbar = fig.colorbar(im)
+    plt.savefig("/Users/woodie/Desktop/mat_changes/" + name + ".png")
 
 class RBM:
     def __init__(self,
@@ -118,6 +127,11 @@ class RBM:
 
         errs = []
 
+        # plot_mat(self.sess.run(tf.exp(self.w[0:1000,:])), "0")
+        import seaborn as sns
+        fig, ax = plt.subplots(1, 1)
+        sns.set(color_codes=True)
+
         for e in range(n_epoches):
             if verbose and not self._use_tqdm:
                 print('Epoch: {:d}'.format(e))
@@ -141,6 +155,14 @@ class RBM:
                 epoch_errs[epoch_errs_ptr] = batch_err
                 epoch_errs_ptr += 1
 
+            # plot_mat(self.sess.run(tf.exp(self.w[0:1000,:])), str(e+1))
+            # print(self.sess.run(tf.exp(self.w[0:10,0:10])))
+
+            res = self.sess.run(tf.reduce_sum(self.w, axis=1))
+            # res = res.flatten()
+
+            sns.distplot(res, hist=False, rug=False, ax=ax, label="epoche %d" % e)
+
             if verbose:
                 err_mean = epoch_errs.mean()
                 if self._use_tqdm:
@@ -152,6 +174,19 @@ class RBM:
                 sys.stdout.flush()
 
             errs = np.hstack([errs, epoch_errs])
+
+        ax.legend()
+        # fig.savefig("/Users/woodie/Desktop/mat_changes/hid_abs_sumdist.png")
+        plt.show()
+
+        from gensim import corpora, models
+        ngram_dict = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
+        vals, indice = self.sess.run(tf.nn.top_k(tf.reduce_sum(self.w, axis=1), len(ngram_dict)))
+        sorted_vocab = [ ngram_dict[ind] for ind in indice ]
+        for word, val in zip(sorted_vocab, vals):
+            print("%s\t%f" % (word, val))
+
+
 
         return errs
 
