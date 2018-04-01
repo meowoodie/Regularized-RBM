@@ -25,7 +25,7 @@ jaydarious_morrison = 35:41
 julian_tucker       = 42:48
 thaddeus_todd       = 49:56
 # select a subset of raw data, in particular, first 56 cases have been labeled
-positive.x = rawdata[burglary, ]
+positive.x = rawdata[jaydarious_morrison, ]
 negative.x = rawdata[57:2056, ]
 negative.x = negative.x[sample(nrow(negative.x), n_sample), ]
 x = rbind(positive.x, negative.x)
