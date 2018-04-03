@@ -14,18 +14,18 @@ data.path  = "/Users/woodie/Desktop/workspace/Event2vec/resource/embeddings/2k.b
 vocab.path = "/Users/woodie/Desktop/workspace/Event2vec/resource/vocab_list.txt"
 rawdata = read.csv(data.path, header = FALSE, sep = ",")
 vocab   = read.csv(vocab.path, header = FALSE, sep = " ")
-n_sample = 500
+n_sample = 200
 
-set.seed(3)
+set.seed(9)
 # labeled rows indices
-burglary   = 1:22
-pedrobbery = 23:26
+burglary            = 1:22
+pedrobbery          = 23:26
 dijawan_adams       = 27:34
 jaydarious_morrison = 35:41
 julian_tucker       = 42:48
 thaddeus_todd       = 49:56
 # select a subset of raw data, in particular, first 56 cases have been labeled
-positive.x = rawdata[jaydarious_morrison, ]
+positive.x = rawdata[thaddeus_todd, ]
 negative.x = rawdata[57:2056, ]
 negative.x = negative.x[sample(nrow(negative.x), n_sample), ]
 x = rbind(positive.x, negative.x)
@@ -54,19 +54,19 @@ print(selected.words)
 print(coef.selection)
 
 # plot result
-mod = glmnet(x, y)
-glmcoef = coef(mod, cv.fit$lambda.min)
+mod           = glmnet(x, y)
+glmcoef       = coef(mod, cv.fit$lambda.min)
 coef.increase = dimnames(glmcoef[glmcoef[,1]>0,0])[[1]]
 coef.decrease = dimnames(glmcoef[glmcoef[,1]<0,0])[[1]]
-#get ordered list of variables as they appear at smallest lambda
+# get ordered list of variables as they appear at smallest lambda
 allnames = names(coef(mod)[,ncol(coef(mod))][order(coef(mod)[,ncol(coef(mod))],decreasing=TRUE)])
-#remove intercept
+# remove intercept
 allnames = setdiff(allnames,allnames[grep("Intercept",allnames)])
-#assign colors
+# assign colors
 cols = rep("gray", length(allnames))
 cols[allnames %in% coef.increase] = "red"      # higher mpg is good
 cols[allnames %in% coef.decrease] = "blue"     # lower mpg is not
 
 library(plotmo)
 plot_glmnet(cv.fit$glmnet.fit, label=TRUE, s=cv.fit$lambda.min, col=cols)
-# plot_glmnet(cv.fit$glmnet.fit, label=TRUE)
+
