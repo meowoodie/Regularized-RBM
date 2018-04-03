@@ -7,7 +7,7 @@ This module contains basic interfaces used for natural language processing.
 Also the script process the indicated documents and build corpus on top of that
 by default.
 """
-
+from __future__ import print_function
 from gensim import corpora, models
 from collections import defaultdict
 from nltk.util import ngrams
@@ -19,8 +19,11 @@ import nltk
 import sys
 import re
 
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+
+from utils.mat2img import mat2img
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -58,8 +61,10 @@ class Documents(object):
         """
 		for line in self.iter_object:
 			if self.counter > 0 and self.counter % 1000 == 0:
-				print >> sys.stderr, "[%s] [Documents] %s docs have been processed." % \
-				         (arrow.now(), self.counter)
+				print("[%s] [Documents] %s docs have been processed." % (arrow.now(), self.counter), \
+				      file=sys.stderr)
+				# print >> sys.stderr, "[%s] [Documents] %s docs have been processed." % \
+				#          (arrow.now(), self.counter)
 			try:
 				if self.is_tokenzied:
 					yield self.string2tokens(line, N=self.n, \
@@ -72,8 +77,10 @@ class Documents(object):
 					yield self.string2sents(line)
 			# Yield empty token list if tokenization failed as UnicodeDecodeError was raised
 			except UnicodeDecodeError as e:
-				print >> sys.stderr, "[%s] [Documents] No. %s doc raise expection: %s." % \
-				         (arrow.now(), self.counter, e)
+				print("[%s] [Documents] No. %s doc raise expection: %s." % (arrow.now(), self.counter, e), \
+				      file=sys.stderr)
+				# print >> sys.stderr, "[%s] [Documents] No. %s doc raise expection: %s." % \
+				#          (arrow.now(), self.counter, e)
 				yield []
 
 			self.counter += 1
@@ -97,8 +104,8 @@ class Documents(object):
 
 	@staticmethod
 	def string2tokens(text_string, N=1, pad_right=False, pad_left=False, \
-		         left_pad_symbol=None, right_pad_symbol=None, \
-				 keep_sents=False):
+		              left_pad_symbol=None, right_pad_symbol=None, \
+				      keep_sents=False):
 		"""
 		Tokenize each of the words in the text (one document as a line).
 
@@ -178,17 +185,27 @@ def dictionary(text_iter_obj, min_term_freq=1, \
 	dictionary.compactify()
 	return dictionary
 
-def sub_dictionary(dictionary, ngrams_list):
+def sub_dictionary(dictionary, ngrams_list, by_key=False):
 	"""
 	Return a sub dictionary by indicating a ngrams list.
 	"""
-	print len(dictionary)
-	remove_tokens = list(set(dictionary.token2id.keys()) - set(ngrams_list))
-	print len(remove_tokens)
-	remove_ids    = [ dictionary.token2id[token] for token in remove_tokens]
+	print("[%s] [Sub Dict] Load existing dictionary: %s" % \
+	      (arrow.now(), dictionary), file=sys.stderr)
+
+	if by_key:
+		remove_tokens = list(set(dictionary.keys()) - set(ngrams_list))
+		remove_ids = [ token for token in remove_tokens]
+	else:
+		remove_tokens = list(set(dictionary.token2id.keys()) - set(ngrams_list))
+		remove_ids = [ dictionary.token2id[token] for token in remove_tokens]
+	print("[%s] [Sub Dict] %d tokens have been removed." % \
+	      (arrow.now(), len(remove_tokens)), file=sys.stderr)
+
 	dictionary.filter_tokens(remove_ids)
 	dictionary.compactify()
-	print len(dictionary)
+	print("[%s] [Sub Dict] New sub-dictionary has been created: %s" % \
+	      (arrow.now(), dictionary), file=sys.stderr)
+
 	return dictionary
 
 def corpus_by_documents(text_iter_obj, dictionary, \
@@ -209,7 +226,8 @@ def corpus_by_documents(text_iter_obj, dictionary, \
 	tfidf_corpus = tfidf[corpus]
 	return tfidf_corpus
 
-def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", show=False, N=10):
+def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", \
+                     show=False, N=10, file_name="results/test.pdf", title=None):
 	"""
 	Calculate the histogram for each of the ngrams that appears in the indicated
 	corpus.
@@ -243,14 +261,17 @@ def corpus_histogram(corpus, dictionary, sort_by="weighted_sum", show=False, N=1
 	# visualize the distributions for top N ngrams
 	if show:
 		import seaborn as sns
-		fig, ax = plt.subplots(1, 1)
-		sns.set(color_codes=True)
-		for ngram, value in sorted_ngram:
-			sns.distplot(ngram_dist[ngram],
-				hist=False, rug=False, ax=ax, label="%s (%f)" % (ngram, value))
-		ax.set(xlabel='tfidf value', ylabel='frequency (count)')
-		ax.legend()
-		plt.show()
+		with PdfPages(file_name) as pdf:
+			fig, ax = plt.subplots(1, 1)
+			sns.set(color_codes=True)
+			for ngram, value in sorted_ngram:
+				sns.distplot(ngram_dist[ngram],
+					hist=False, rug=False, ax=ax, label="%s (%f)" % (ngram, value))
+			ax.set(xlabel='tfidf value', ylabel='frequency (count)')
+			if title is not None:
+				ax.set_title(title, fontweight="bold")
+			ax.legend()
+			pdf.savefig(fig)
 	return dict(ngram_dist), sorted_ngram
 
 
@@ -261,38 +282,48 @@ if __name__ == "__main__":
 	# -------------------------------
 	corpus_name = "data/new.corpus.txt"
 
-	# build dictionary
-	with open(corpus_name, "r") as fhandler:
-		ngram_dict = dictionary(fhandler, min_term_freq=5, n=2)
-		ngram_dict.save("resource/dict/2k.bigram.dict")
+	# # build dictionary
+	# with open(corpus_name, "r") as fhandler:
+	# 	ngram_dict = dictionary(fhandler, min_term_freq=5, n=2)
+	# 	ngram_dict.save("resource/dict/2k.bigram.dict")
 
-	# load dictionary
-	ngram_dict = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
-	# build tfidf corpus
-	corpus_tfidf = []
-	with open(corpus_name, "r") as fhandler:
-		corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=2)
+	# # build tfidf corpus
+	# # load dictionary
+	# ngram_dict = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
+	# corpus_tfidf = []
+	# with open(corpus_name, "r") as fhandler:
+	# 	corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=2)
+	#
+	# 	# save the corpus
+	# 	corpora.MmCorpus.serialize("resource/corpus/2k.bigram.doc.tfidf.corpus", corpus_tfidf)
+	#
+	# 	# convert to dense corpus if necessary
+	# 	# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
+	# 	# np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
 
-		# save the corpus
-		corpora.MmCorpus.serialize("resource/corpus/2k.bigram.doc.tfidf.corpus", corpus_tfidf)
+	from gensim.corpora.mmcorpus import MmCorpus
+	from gensim.matutils import corpus2dense
+	ngram_dict   = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
+	corpus       = MmCorpus("resource/corpus/2k.bigram.doc.tfidf.corpus")
+	dense_corpus = corpus2dense(corpus, num_terms=len(ngram_dict)).transpose()
+	mat2img(np.log(dense_corpus))
+	# np.savetxt("resource/embeddings/2k.bigram.doc.tfidf.vecs.txt", dense_corpus, delimiter=',')
 
-		# convert to dense corpus if necessary
-		# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
-		# np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
-
-	# statistics of ngram distribution in indicated documents
-	# -------------------------------------------------------
-	burglary      = [0,22]
-	ped_robbery   = [22,26]
-	dijawan_adams = [26,34]
-	julian_tucker = [41,48]
-	thaddeus_todd = [48,56]
-	jaydarious_morrison = [34,41]
-
-	# plot distribution of ngrams for a specific sub-corpus
+	# # statistics of ngram distribution in indicated documents
+	# # -------------------------------------------------------
+	# burglary      = [0,22]
+	# ped_robbery   = [22,26]
+	# dijawan_adams = [26,34]
+	# julian_tucker = [41,48]
+	# thaddeus_todd = [48,56]
+	# jaydarious_morrison = [34,41]
+	#
+	# # plot distribution of ngrams for a specific sub-corpus
 	# corpus_histogram(
-	# 	scorpus_tfidf[burglary[0]:burglary[1]], ngram_dict,
-	# 	sort_by="weighted_sum", show=True, N=10)
+	# 	corpus[jaydarious_morrison[0]:jaydarious_morrison[1]], ngram_dict,
+	# 	sort_by="weighted_sum", show=True, N=10,
+	# 	title="Pedestrian Robbery Committed by Suspect M",
+	# 	file_name="results/ngram_hist_morrison.pdf")
 
 	# # get sub vocabulary which consis of top N weighted sum ngrams from each of
 	# # crime series
