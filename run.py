@@ -11,6 +11,7 @@ from gensim import corpora
 from gensim.matutils import corpus2dense
 
 from rbm import SemiSupervRBM
+from rbm import GBRBM
 
 if __name__ == "__main__":
     dict_name   = "resource/dict/2k.bigram.dict"
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     corpus_tfidf = corpora.MmCorpus(corpus_name)
 
     # get corpus matrix
-    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:2000]
+    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:21]
     n_x    = data_x.shape[1]
     print(data_x.shape)
 
@@ -37,13 +38,21 @@ if __name__ == "__main__":
         d = np.zeros(n_y)
         d[label_set.index(label)] = 1.
         data_y.append(d)
-    data_y    = np.array(data_y)[0:2000]
+    data_y    = np.array(data_y)[0:21]
 
     print(data_y.shape)
-    rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=.1, batch_size=20, \
-                        learning_rate=.001, momentum=0.95, err_function='mse', \
-                        sample_visible=False)
-    rbm.fit(data_x, data_y, n_epoches=1000, shuffle=True)
+
+    # rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=.5, batch_size=20, \
+    #                     learning_rate=.01, momentum=0.95, err_function='mse', \
+    #                     sample_visible=False)
+    # rbm.fit(data_x, data_y, n_epoches=100, shuffle=True)
+    # embeddings = rbm.transform(data_x).round().astype(int)
+
+    rbm = GBRBM(n_visible=n_x, n_hidden=1000, \
+                learning_rate=0.1, momentum=0.95, err_function='mse', \
+                use_tqdm=False, sample_visible=False, sigma=1.)
+    rbm.fit(data_x, n_epoches=30, batch_size=20, \
+            shuffle=True, verbose=True)
     embeddings = rbm.transform(data_x).round().astype(int)
 
     # save embeddings
