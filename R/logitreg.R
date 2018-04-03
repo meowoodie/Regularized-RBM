@@ -16,7 +16,6 @@ rawdata = read.csv(data.path, header = FALSE, sep = ",")
 vocab   = read.csv(vocab.path, header = FALSE, sep = " ")
 n_sample = 200
 
-set.seed(9)
 # labeled rows indices
 burglary            = 1:22
 pedrobbery          = 23:26
@@ -24,9 +23,18 @@ dijawan_adams       = 27:34
 jaydarious_morrison = 35:41
 julian_tucker       = 42:48
 thaddeus_todd       = 49:56
+
+set.seed(14)
+candidates = thaddeus_todd
 # select a subset of raw data, in particular, first 56 cases have been labeled
-positive.x = rawdata[thaddeus_todd, ]
-negative.x = rawdata[57:2056, ]
+positive.x = rawdata[candidates, ]
+random.ind = 57:2056
+others.ind = setdiff(Reduce(union, list(burglary, pedrobbery, dijawan_adams, 
+                                        jaydarious_morrison, julian_tucker, 
+                                        thaddeus_todd)),
+                     candidates)
+negative.x = rawdata[union(sample(random.ind, n_sample), others.ind), ]
+negative.x = rawdata[sample(random.ind, n_sample), ]
 negative.x = negative.x[sample(nrow(negative.x), n_sample), ]
 x = rbind(positive.x, negative.x)
 x = x[, colSums(x != 0) > -1]
@@ -50,6 +58,7 @@ selection         = coef(cv.fit, s="lambda.min")
 nonzero.selection = which(selection > 0) - 2
 coef.selection    = selection[nonzero.selection + 2]
 selected.words    = as.character(vocab$V2[match(nonzero.selection, vocab$V1)])
+print(nonzero.selection)
 print(selected.words)
 print(coef.selection)
 
