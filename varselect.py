@@ -15,6 +15,7 @@ import arrow
 import sys
 
 from corpus import corpus_by_documents, sub_dictionary
+from utils.mat2img import mat2img
 from tfrbm import GBRBM
 # from rbm import SemiSupervRBM
 # from rbm import GBRBM
@@ -47,7 +48,7 @@ TUCKR_TERMS    = [226, 477, 484, 1499, 1943, 1946, 3067, 3143, 3621, 4096, 4313,
 TODD_TERMS     = [234, 1433, 3058, 4313, 4981, 5513, 5661, 6288, 6801, 7019]
 
 # row ids of preserved documents in corpus
-PRESERV_DOCS  = RANOM_INDICES + LABEL_INDICES
+PRESERV_DOCS  = LABEL_INDICES + RANOM_INDICES
 # key ids of preserved terms in specified vocabulary
 PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
 
@@ -83,11 +84,12 @@ if __name__ == "__main__":
     corpus_slice = corpus_slice[PRESERV_DOCS, :]
     print("[%s] [Var Select] corpus has been sliced with size (%d, %d)" % \
          (arrow.now(), corpus_slice.shape[0], corpus_slice.shape[1]), file=sys.stderr)
+    # mat2img(np.log(corpus_slice))
 
-    rbm = GBRBM(n_visible=corpus_slice.shape[1], n_hidden=30, \
-                learning_rate=.05, momentum=0.95, err_function='mse', \
+    rbm = GBRBM(n_visible=corpus_slice.shape[1], n_hidden=20, \
+                learning_rate=.01, momentum=0.95, err_function='mse', \
                 use_tqdm=False, sample_visible=False, sigma=1.)
-    rbm.fit(corpus_slice, n_epoches=30, batch_size=10, \
+    rbm.fit(corpus_slice, n_epoches=100, batch_size=30, \
             shuffle=True, verbose=True)
     embeddings = rbm.transform(corpus_slice).round().astype(int)
 
