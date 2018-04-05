@@ -16,6 +16,7 @@ import sys
 
 from corpus import corpus_by_documents, sub_dictionary
 from utils.mat2img import mat2img
+from utils.vec2tsne import vec2tsne
 from tfrbm import GBRBM
 # from rbm import SemiSupervRBM
 # from rbm import GBRBM
@@ -52,13 +53,10 @@ PRESERV_DOCS  = LABEL_INDICES + RANOM_INDICES
 # key ids of preserved terms in specified vocabulary
 PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
 
-if __name__ == "__main__":
-    N            = 2  # N for n-gram
-    n_noise_term = 10 # number of noise ngram terms
-    # path for resource
-    dict_name   = "resource/dict/2k.bigram.dict"
-    corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
-
+def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoches=20, \
+                           learning_rate=.001, batch_size=30, n_hidden=50):
+    """
+    """
     # load existing dictionary (or creat a new dictionary from scratch)
     # code for creating new dictionary ...
     ngram_dict    = corpora.Dictionary.load(dict_name)
@@ -86,13 +84,49 @@ if __name__ == "__main__":
          (arrow.now(), corpus_slice.shape[0], corpus_slice.shape[1]), file=sys.stderr)
     # mat2img(np.log(corpus_slice))
 
-    rbm = GBRBM(n_visible=corpus_slice.shape[1], n_hidden=20, \
-                learning_rate=.01, momentum=0.95, err_function='mse', \
+    rbm = GBRBM(n_visible=corpus_slice.shape[1], n_hidden=n_hidden, \
+                learning_rate=learning_rate, momentum=0.95, err_function='mse', \
                 use_tqdm=False, sample_visible=False, sigma=1.)
-    rbm.fit(corpus_slice, n_epoches=100, batch_size=30, \
+    rbm.fit(corpus_slice, n_epoches=n_epoches, batch_size=batch_size, \
             shuffle=True, verbose=True)
     embeddings = rbm.transform(corpus_slice).round().astype(int)
+    # w, vbias, hbias = rbm.get_weights()
+    # mat2img(w)
+    return corpus_slice, embeddings
 
-    # save embeddings
-    file_name="sub.2k.corpus"
-    np.savetxt("resource/embeddings/%s.txt" % file_name, embeddings, delimiter=',')
+    # # save embeddings
+    # file_name="sub.2k.corpus"
+    # np.savetxt("resource/embeddings/%s.txt" % file_name, embeddings, delimiter=',')
+
+if __name__ == "__main__":
+    N            = 2  # N for n-gram
+    n_noise_term = 20 # number of noise ngram terms
+    # path for resource
+    dict_name   = "resource/dict/2k.bigram.dict"
+    corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
+    label_path  = "data/new.info.txt"
+
+    # parameters
+    params = {
+        "n_noise_term":  [0,    10,   20,   50,   100,  200,  500,  1000, 2000],
+        "n_epoches":     [100,  100,  100,  200,  200,  200,  400,  400,  500],
+        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50]
+    }
+
+    # iteratively do experiments over all the parameters
+    for i in range(len(params.values()[0])):
+        # name of the plot
+        plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
+            (params["n_hidden"][i], params["n_noise_term"][i], \
+             params["n_epoches"][i], params["batch_size"][i])
+        # exp: variable selection
+        corpus_slice, embeddings = exp_variable_selection(
+            dict_name, corpus_name, n_hidden=params["n_hidden"][i],
+            N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
+            learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
+        # path of the plot
+        plot_path = "results/%s.pdf" % plot_name
+        # plot the embeddings results
+        vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
