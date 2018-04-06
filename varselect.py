@@ -56,6 +56,8 @@ PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCK
 def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoches=20, \
                            learning_rate=.001, batch_size=30, n_hidden=50):
     """
+    Main function for selecting variables and calculating embeddings for selected
+    embeddings vectors by using vanilla RBM.
     """
     # load existing dictionary (or creat a new dictionary from scratch)
     # code for creating new dictionary ...
@@ -115,36 +117,36 @@ if __name__ == "__main__":
         "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
 
-    # # iteratively do experiments over all the parameters
-    # for i in range(len(params.values()[0])):
-    #     # name of the plot
-    #     plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
-    #         (params["n_hidden"][i], params["n_noise_term"][i], \
-    #          params["n_epoches"][i], params["batch_size"][i])
-    #     # exp: variable selection
-    #     corpus_slice, embeddings = exp_variable_selection(
-    #         dict_name, corpus_name, n_hidden=params["n_hidden"][i],
-    #         N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
-    #         learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
-    #     # path of the plot
-    #     plot_path = "results/%s.pdf" % plot_name
-    #     # plot the embeddings results
-    #     vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+    # iteratively do experiments over all the parameters
+    for i in range(len(params.values()[0])):
+        # name of the plot
+        plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
+            (params["n_hidden"][i], params["n_noise_term"][i], \
+             params["n_epoches"][i], params["batch_size"][i])
+        # exp: variable selection
+        corpus_slice, embeddings = exp_variable_selection(
+            dict_name, corpus_name, n_hidden=params["n_hidden"][i],
+            N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
+            learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
+        # path of the plot
+        plot_path = "results/%s.pdf" % plot_name
+        # plot the embeddings results
+        vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
 
-    # parameters
-    n_hidden = 50
-    n_noise  = 0
-    n_epoch  = 150
-    n_batch  = 30
-    # name of the plot
-    plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
-        (n_hidden, n_noise, n_epoch, n_batch)
-    # exp: variable selection
-    corpus_slice, embeddings = exp_variable_selection(
-        dict_name, corpus_name, n_hidden=n_hidden,
-        N=2, n_noise_term=n_noise, n_epoches=n_epoch,
-        learning_rate=1e-2, batch_size=n_batch)
-    # path of the plot
-    plot_path = "results/%s.pdf" % plot_name
-    # plot the embeddings results
-    vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+    # # parameters
+    # n_hidden = 50
+    # n_noise  = 0
+    # n_epoch  = 150
+    # n_batch  = 30
+    # # name of the plot
+    # plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
+    #     (n_hidden, n_noise, n_epoch, n_batch)
+    # # exp: variable selection
+    # corpus_slice, embeddings = exp_variable_selection(
+    #     dict_name, corpus_name, n_hidden=n_hidden,
+    #     N=2, n_noise_term=n_noise, n_epoches=n_epoch,
+    #     learning_rate=1e-2, batch_size=n_batch)
+    # # path of the plot
+    # plot_path = "results/%s.pdf" % plot_name
+    # # plot the embeddings results
+    # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
