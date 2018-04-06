@@ -102,6 +102,8 @@ ENV/
 
 # resource
 results/
+datacandidates/
+resource/
 archive/
 data/
 
