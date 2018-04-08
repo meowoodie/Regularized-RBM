@@ -22,7 +22,7 @@ if __name__ == "__main__":
     corpus_tfidf = corpora.MmCorpus(corpus_name)
 
     # get corpus matrix
-    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:21]
+    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:256]
     n_x    = data_x.shape[1]
     print(data_x.shape)
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         d = np.zeros(n_y)
         d[label_set.index(label)] = 1.
         data_y.append(d)
-    data_y    = np.array(data_y)[0:21]
+    data_y    = np.array(data_y)[0:256]
 
     print(data_y.shape)
 
@@ -49,9 +49,9 @@ if __name__ == "__main__":
     # embeddings = rbm.transform(data_x).round().astype(int)
 
     rbm = GBRBM(n_visible=n_x, n_hidden=1000, \
-                learning_rate=0.1, momentum=0.95, err_function='mse', \
+                learning_rate=.1, momentum=0.95, err_function='mse', \
                 use_tqdm=False, sample_visible=False, sigma=1.)
-    rbm.fit(data_x, n_epoches=30, batch_size=20, \
+    rbm.fit(data_x, n_epoches=25, batch_size=20, \
             shuffle=True, verbose=True)
     embeddings = rbm.transform(data_x).round().astype(int)
 
