@@ -59,7 +59,7 @@ PRESERV_DOCS  = LABEL_INDICES + RANOM_INDICES
 PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
 
 def plot_rates(df, time_name="Number of Noise Terms", value_name="Hit Rate", \
-               unit_name="Iteration Id", condition_name="Top K",
+               unit_name="Iteration Id", condition_name="Number of Results",
                plot_path="results/hit_rates.pdf"):
     # plot as a pdf file
     with PdfPages(plot_path) as pdf:
@@ -142,34 +142,34 @@ if __name__ == "__main__":
         "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
 
-    # # raw experiment results
-    # exp_data = {
-    #     "Top K": [], "Hit Rate": [],
-    #     "Iteration Id": [], "Number of Noise Terms": []}
-    # # iteratively repeat the same experiments multiple times
-    # for j in range(iters):
-    #     # iteratively do experiments over all the parameters
-    #     for i in range(len(params.values()[0])):
-    #         # exp: variable selection
-    #         corpus_slice, embeddings = exp_variable_selection(
-    #             dict_name, corpus_name, n_hidden=params["n_hidden"][i],
-    #             N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
-    #             learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
-    #
-    #         hit_rates = [
-    #             eval_by_cosine(embeddings, labels, label_inds=range(56), top_k=k, type="avg_rate")
-    #             for k in Ks ]
-    #
-    #         exp_data["Top K"]                 += Ks
-    #         exp_data["Hit Rate"]              += hit_rates
-    #         exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
-    #         exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
-    #
-    # exp_df = pd.DataFrame(data=exp_data)
-    # exp_df.to_pickle("exp_data_frame")
+    # raw experiment results
+    exp_data = {
+        "Top K": [], "Hit Rate": [],
+        "Iteration Id": [], "Number of Noise Terms": []}
+    # iteratively repeat the same experiments multiple times
+    for j in range(iters):
+        # iteratively do experiments over all the parameters
+        for i in range(len(params.values()[0])):
+            # exp: variable selection
+            corpus_slice, embeddings = exp_variable_selection(
+                dict_name, corpus_name, n_hidden=params["n_hidden"][i],
+                N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
+                learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
 
-    exp_df = pd.read_pickle("exp_data_frame")
-    plot_rates(exp_df)
+            hit_rates = [
+                eval_by_cosine(embeddings, labels, label_inds=range(56), top_k=k, type="avg_rate")
+                for k in Ks ]
+
+            exp_data["Top K"]                 += Ks
+            exp_data["Hit Rate"]              += hit_rates
+            exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
+            exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
+
+    exp_df = pd.DataFrame(data=exp_data)
+    exp_df.to_pickle("exp_data_frame")
+
+    # exp_df = pd.read_pickle("resource/exp_data_frame_new")
+    # plot_rates(exp_df)
 
         # # name of the plot
         # plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
