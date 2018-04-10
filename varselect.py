@@ -6,9 +6,14 @@ This is the main script for testing algorithm on real dataset, which includes
 helpful function for data preparing, model training, and visualizing.
 """
 from __future__ import print_function
+
 from gensim.corpora.mmcorpus import MmCorpus
 from gensim.matutils import corpus2dense
 from gensim import corpora
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 import numpy as np
 import random
 import arrow
@@ -17,9 +22,9 @@ import sys
 from corpus import corpus_by_documents, sub_dictionary
 from utils.mat2img import mat2img
 from utils.vec2tsne import vec2tsne
+from utils.eval4vec import eval_by_cosine
 from rbm import GBRBM
 # from rbm import SemiSupervRBM
-# from rbm import GBRBM
 
 # row ids of random documents
 RANOM_INDICES = [
@@ -52,6 +57,16 @@ TODD_TERMS     = [234, 1433, 3058, 4313, 4981, 5513, 5661, 6288, 6801, 7019]
 PRESERV_DOCS  = LABEL_INDICES + RANOM_INDICES
 # key ids of preserved terms in specified vocabulary
 PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
+
+def plot_rates(df, time_name="Number of Noise Terms", value_name="Hit Rate", \
+               unit_name="Iteration Id", condition_name="Top K",
+               plot_path="results/hit_rates.pdf"):
+    # plot as a pdf file
+    with PdfPages(plot_path) as pdf:
+        fig, ax = plt.subplots(1, 1)
+        sns.tsplot(time=time_name, value=value_name, \
+                   unit=unit_name, condition=condition_name, data=df)
+        pdf.savefig(fig)
 
 def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoches=20, \
                            learning_rate=.001, batch_size=30, n_hidden=50):
@@ -103,36 +118,69 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
     N            = 2  # N for n-gram
     n_noise_term = 20 # number of noise ngram terms
+    Ks           = [20, 40, 80, 160, 256]
+    iters        = 10
     # path for resource
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
     label_path  = "data/new.info.txt"
 
+    # load labels
+    labels = []
+    with open(label_path, "r") as fhandler:
+		for line in fhandler:
+			doc_ind  = line.strip().split("\t")[0]
+			catagory = line.strip().split("\t")[1]
+			labels.append(catagory)
+
     # parameters
     params = {
-        "n_noise_term":  [0,    10,   20,   50,   100,  200,  500,  1000, 2000],
-        "n_epoches":     [100,  100,  100,  200,  200,  200,  400,  400,  500],
-        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  [0,    10,   20,   50,   100,  200,  500,  1000, 2000, 3000, 4000, 5000],
+        "n_epoches":     [100,  100,  200,  200,  200,  200,  200,  200,  200,  200,  300,  300],
+        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2],
+        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
 
-    # iteratively do experiments over all the parameters
-    for i in range(len(params.values()[0])):
-        # name of the plot
-        plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
-            (params["n_hidden"][i], params["n_noise_term"][i], \
-             params["n_epoches"][i], params["batch_size"][i])
-        # exp: variable selection
-        corpus_slice, embeddings = exp_variable_selection(
-            dict_name, corpus_name, n_hidden=params["n_hidden"][i],
-            N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
-            learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
-        # path of the plot
-        plot_path = "results/%s.pdf" % plot_name
-        # plot the embeddings results
-        vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+    # # raw experiment results
+    # exp_data = {
+    #     "Top K": [], "Hit Rate": [],
+    #     "Iteration Id": [], "Number of Noise Terms": []}
+    # # iteratively repeat the same experiments multiple times
+    # for j in range(iters):
+    #     # iteratively do experiments over all the parameters
+    #     for i in range(len(params.values()[0])):
+    #         # exp: variable selection
+    #         corpus_slice, embeddings = exp_variable_selection(
+    #             dict_name, corpus_name, n_hidden=params["n_hidden"][i],
+    #             N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
+    #             learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
+    #
+    #         hit_rates = [
+    #             eval_by_cosine(embeddings, labels, label_inds=range(56), top_k=k, type="avg_rate")
+    #             for k in Ks ]
+    #
+    #         exp_data["Top K"]                 += Ks
+    #         exp_data["Hit Rate"]              += hit_rates
+    #         exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
+    #         exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
+    #
+    # exp_df = pd.DataFrame(data=exp_data)
+    # exp_df.to_pickle("exp_data_frame")
 
+    exp_df = pd.read_pickle("exp_data_frame")
+    plot_rates(exp_df)
+
+        # # name of the plot
+        # plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
+        #     (params["n_hidden"][i], params["n_noise_term"][i], \
+        #      params["n_epoches"][i], params["batch_size"][i])
+        # # path of the plot
+        # plot_path = "results/%s.pdf" % plot_name
+        # # plot the embeddings results
+        # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+
+    # # UNIT TEST ON EXP_VARIABLE_SELECTION
     # # parameters
     # n_hidden = 50
     # n_noise  = 0
