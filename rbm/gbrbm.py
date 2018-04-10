@@ -150,8 +150,6 @@ class RBM:
                 epoch_errs[epoch_errs_ptr] = batch_err
                 epoch_errs_ptr += 1
 
-            mat2img(self.sess.run(self.w), str(e))
-
             if verbose:
                 err_mean = epoch_errs.mean()
                 if self._use_tqdm:
@@ -196,15 +194,15 @@ class GBRBM(RBM):
 
         RBM.__init__(self, n_visible, n_hidden, **kwargs)
 
-    def regularizer(self, w, drop_rate=0.2, min=0):
-        top_val, top_ind = tf.nn.top_k(
-            tf.reshape(w, [-1]),
-            tf.cast(self.n_valid * tf.constant(1-drop_rate, tf.float32), tf.int32))
-        self.n_valid = tf.cast(tf.shape(top_val)[0], tf.float32) * tf.constant(1-drop_rate, tf.float32)
-        threshold = tf.reduce_min(top_val)
-        reg_mask = tf.cast(w > threshold, tf.float32)
-        reg_base = tf.cast(w < threshold, tf.float32) * threshold
-        return tf.multiply(self.w, reg_mask) + reg_base
+    # def regularizer(self, w, drop_rate=0.2, min=0):
+    #     top_val, top_ind = tf.nn.top_k(
+    #         tf.reshape(w, [-1]),
+    #         tf.cast(self.n_valid * tf.constant(1-drop_rate, tf.float32), tf.int32))
+    #     self.n_valid = tf.cast(tf.shape(top_val)[0], tf.float32) * tf.constant(1-drop_rate, tf.float32)
+    #     threshold = tf.reduce_min(top_val)
+    #     reg_mask = tf.cast(w > threshold, tf.float32)
+    #     reg_base = tf.cast(w < threshold, tf.float32) * threshold
+    #     return tf.multiply(self.w, reg_mask) + reg_base
 
     def _initialize_vars(self):
         hidden_p = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
@@ -230,8 +228,9 @@ class GBRBM(RBM):
         update_delta_visible_bias = self.delta_visible_bias.assign(delta_visible_bias_new)
         update_delta_hidden_bias = self.delta_hidden_bias.assign(delta_hidden_bias_new)
 
-        w        = self.w.assign(self.w + delta_w_new)
-        update_w = self.w.assign(self.regularizer(w))
+        # w        = self.w.assign(self.w + delta_w_new)
+        # update_w = self.w.assign(self.regularizer(w))
+        update_w = self.w.assign(self.w + delta_w_new)
         update_visible_bias = self.visible_bias.assign(self.visible_bias + delta_visible_bias_new)
         update_hidden_bias = self.hidden_bias.assign(self.hidden_bias + delta_hidden_bias_new)
 
