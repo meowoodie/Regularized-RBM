@@ -125,16 +125,16 @@ if __name__ == "__main__":
     #     "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     # }
     params = {
-        "n_noise_term":  [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  range(60), # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100 for i in range(25)] + [200 for i in range(35)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-3 for i in range(60)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(60)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(60)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     # Ks           = [20, 40, 80, 160, 256]
-    Ks           = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220]
-    iters        = 5
+    Ks           = [20, 40, 60, 80]
+    iters        = 100
     # path for resource
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
