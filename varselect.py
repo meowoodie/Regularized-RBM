@@ -116,10 +116,25 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
     # np.savetxt("resource/embeddings/%s.txt" % file_name, embeddings, delimiter=',')
 
 if __name__ == "__main__":
+    # parameters
+    # params = {
+    #     "n_noise_term":  [0,    10,   20,   50,   100,  200,  500,  1000, 2000, 3000, 4000, 5000],
+    #     "n_epoches":     [100,  100,  200,  200,  200,  200,  200,  200,  200,  200,  300,  300],
+    #     "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2],
+    #     "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+    #     "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+    # }
+    params = {
+        "n_noise_term":  [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+    }
     N            = 2  # N for n-gram
-    n_noise_term = 20 # number of noise ngram terms
-    Ks           = [20, 40, 80, 160, 256]
-    iters        = 10
+    # Ks           = [20, 40, 80, 160, 256]
+    Ks           = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220]
+    iters        = 5
     # path for resource
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
@@ -133,21 +148,13 @@ if __name__ == "__main__":
 			catagory = line.strip().split("\t")[1]
 			labels.append(catagory)
 
-    # parameters
-    params = {
-        "n_noise_term":  [0,    10,   20,   50,   100,  200,  500,  1000, 2000, 3000, 4000, 5000],
-        "n_epoches":     [100,  100,  200,  200,  200,  200,  200,  200,  200,  200,  300,  300],
-        "learning_rate": [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2],
-        "batch_size":    [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
-    }
-
     # raw experiment results
     exp_data = {
-        "Top K": [], "Hit Rate": [],
+        "Number of Results": [], "Hit Rate": [],
         "Iteration Id": [], "Number of Noise Terms": []}
     # iteratively repeat the same experiments multiple times
     for j in range(iters):
+        print("calculation iter %d..." % j, file=sys.stderr)
         # iteratively do experiments over all the parameters
         for i in range(len(params.values()[0])):
             # exp: variable selection
@@ -160,16 +167,15 @@ if __name__ == "__main__":
                 eval_by_cosine(embeddings, labels, label_inds=range(56), top_k=k, type="avg_rate")
                 for k in Ks ]
 
-            exp_data["Top K"]                 += Ks
+            exp_data["Number of Results"]     += Ks
             exp_data["Hit Rate"]              += hit_rates
             exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
             exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
 
     exp_df = pd.DataFrame(data=exp_data)
-    exp_df.to_pickle("exp_data_frame")
-
+    # exp_df.to_pickle("exp_data_frame")
     # exp_df = pd.read_pickle("resource/exp_data_frame_new")
-    # plot_rates(exp_df)
+    plot_rates(exp_df)
 
         # # name of the plot
         # plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
