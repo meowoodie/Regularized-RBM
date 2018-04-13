@@ -10,19 +10,19 @@
 library(glmnet)
 
 # load raw data from local file
-data.path  = "/Users/woodie/Desktop/workspace/Event2vec/resource/embeddings/2k.bigram.doc.tfidf.vecs.txt"
-vocab.path = "/Users/woodie/Desktop/workspace/Event2vec/resource/vocab_list.txt"
+data.path  = "/Users/woodie/Desktop/workspace/Event2vec/resource/embeddings/2069.bigram.doc.tfidf.vecs.txt"
+vocab.path = "/Users/woodie/Desktop/workspace/Event2vec/resource/2069.vocab.list.txt"
 rawdata = read.csv(data.path, header = FALSE, sep = ",")
 vocab   = read.csv(vocab.path, header = FALSE, sep = " ")
-n_sample = 200
+n_sample = 300
 
 # labeled rows indices
-burglary            = 1:22
-pedrobbery          = 23:26
-dijawan_adams       = 27:34
-jaydarious_morrison = 35:41
-julian_tucker       = 42:48
-thaddeus_todd       = 49:56
+burglary            = 14:35 # 1:22
+pedrobbery          = 36:39 # 23:26
+dijawan_adams       = 40:47 # 27:34
+jaydarious_morrison = 48:54 # 35:41
+julian_tucker       = 55:61 # 42:48
+thaddeus_todd       = 62:69 # 49:56
 
 set.seed(14)
 candidates = thaddeus_todd
