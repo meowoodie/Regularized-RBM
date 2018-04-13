@@ -280,34 +280,40 @@ if __name__ == "__main__":
 
 	# build corpus from raw text file
 	# -------------------------------
-	corpus_name = "data/new.corpus.txt"
+	corpus_name = "data/2000+69.dataset/2069.corpus.txt"
 
 	# # build dictionary
+	# # ------------------------------------------------------
 	# with open(corpus_name, "r") as fhandler:
 	# 	ngram_dict = dictionary(fhandler, min_term_freq=5, n=2)
-	# 	ngram_dict.save("resource/dict/2k.bigram.dict")
+	# 	ngram_dict.save("resource/dict/2069.bigram.dict")
 
 	# # build tfidf corpus
 	# # load dictionary
-	# ngram_dict = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
+	# # ------------------------------------------------------
+	# ngram_dict = corpora.Dictionary.load("resource/dict/2069.bigram.dict")
 	# corpus_tfidf = []
 	# with open(corpus_name, "r") as fhandler:
 	# 	corpus_tfidf = corpus_by_documents(fhandler, ngram_dict, n=2)
 	#
 	# 	# save the corpus
-	# 	corpora.MmCorpus.serialize("resource/corpus/2k.bigram.doc.tfidf.corpus", corpus_tfidf)
-	#
-	# 	# convert to dense corpus if necessary
-	# 	# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
-	# 	# np.savetxt("resource/embeddings/docs/trigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
+	# 	corpora.MmCorpus.serialize("resource/corpus/2069.bigram.doc.tfidf.corpus", corpus_tfidf)
 
-	from gensim.corpora.mmcorpus import MmCorpus
-	from gensim.matutils import corpus2dense
-	ngram_dict   = corpora.Dictionary.load("resource/dict/2k.bigram.dict")
-	corpus       = MmCorpus("resource/corpus/2k.bigram.doc.tfidf.corpus")
-	dense_corpus = corpus2dense(corpus, num_terms=len(ngram_dict)).transpose()
-	mat2img(np.log(dense_corpus))
-	# np.savetxt("resource/embeddings/2k.bigram.doc.tfidf.vecs.txt", dense_corpus, delimiter=',')
+		# # convert to dense corpus if necessary
+		# dense_corpus = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
+		# np.savetxt("resource/embeddings/docs/2069-bigram-tfidf-vecs.txt", dense_corpus, delimiter=',')
+
+	# # load raw corpus and dictionary
+	# # ------------------------------------------------------
+	# from gensim.corpora.mmcorpus import MmCorpus
+	# from gensim.matutils import corpus2dense
+	# ngram_dict   = corpora.Dictionary.load("resource/dict/2069.bigram.dict")
+	# corpus       = MmCorpus("resource/corpus/2069.bigram.doc.tfidf.corpus")
+	# for i in ngram_dict:
+	# 	print("%s %s" % (str(i), ngram_dict[i]))
+	# # dense_corpus = corpus2dense(corpus, num_terms=len(ngram_dict)).transpose()
+	# # mat2img(np.log(dense_corpus))
+	# # np.savetxt("resource/embeddings/2069.bigram.doc.tfidf.vecs.txt", dense_corpus, delimiter=',')
 
 	# # statistics of ngram distribution in indicated documents
 	# # -------------------------------------------------------
@@ -319,6 +325,7 @@ if __name__ == "__main__":
 	# jaydarious_morrison = [34,41]
 	#
 	# # plot distribution of ngrams for a specific sub-corpus
+	# # ------------------------------------------------------
 	# corpus_histogram(
 	# 	corpus[jaydarious_morrison[0]:jaydarious_morrison[1]], ngram_dict,
 	# 	sort_by="weighted_sum", show=True, N=10,
@@ -327,7 +334,7 @@ if __name__ == "__main__":
 
 	# # get sub vocabulary which consis of top N weighted sum ngrams from each of
 	# # crime series
-	# # --------------------------------------------------------------------------
+	# # ------------------------------------------------------
 	# labeled_series = [
 	# 	burglary, ped_robbery, dijawan_adams,
 	# 	julian_tucker, thaddeus_todd, jaydarious_morrison ]
