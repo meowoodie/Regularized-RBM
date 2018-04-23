@@ -120,7 +120,7 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
     corpus_slice = corpus_slice[PRESERV_DOCS, :]
     print("[%s] [Var Select] corpus has been sliced with size (%d, %d)" % \
          (arrow.now(), corpus_slice.shape[0], corpus_slice.shape[1]), file=sys.stderr)
-    mat2img(np.log(corpus_slice))
+    # mat2img(np.log(corpus_slice))
 
     rbm = GBRBM(n_visible=corpus_slice.shape[1], n_hidden=n_hidden, \
                 learning_rate=learning_rate, momentum=0.95, err_function='mse', \
@@ -139,11 +139,11 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  range(60), # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100 for i in range(25)] + [200 for i in range(35)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-3 for i in range(60)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30 for i in range(60)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50 for i in range(60)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  [i*5 for i in range(10)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100 for i in range(10)], #+ [200 for i in range(35)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-3 for i in range(10)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(10)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(10)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
@@ -162,59 +162,53 @@ if __name__ == "__main__":
             catagory = line.strip().split("\t")[1]
             labels.append(catagory)
 
-    # # raw experiment results
-    # exp_data = {
-    #     "Number of Results": [], "Hit Rate": [],
-    #     "Iteration Id": [], "Number of Noise Terms": []}
-    # # iteratively repeat the same experiments multiple times
-    # for j in range(iters):
-    #     print("calculation iter %d..." % j, file=sys.stderr)
-    #     # iteratively do experiments over all the parameters
-    #     for i in range(len(params.values()[0])):
-    #         # exp: variable selection
-    #         corpus_slice, embeddings = exp_variable_selection(
-    #             dict_name, corpus_name, n_hidden=params["n_hidden"][i],
-    #             N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
-    #             learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
-    #
-    #         hit_rates = [
-    #             eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=k, type="avg_rate")
-    #             for k in Ks ]
-    #
-    #         exp_data["Number of Results"]     += Ks
-    #         exp_data["Hit Rate"]              += hit_rates
-    #         exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
-    #         exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
-    #
-    # exp_df = pd.DataFrame(data=exp_data)
-    # # exp_df.to_pickle("exp_data_frame")
-    # # exp_df = pd.read_pickle("resource/exp_data_frame_new")
-    # plot_rates(exp_df)
+    # EXP RATE PLOTTING
+    # raw experiment results
+    exp_data = {
+        "Number of Results": [], "Hit Rate": [],
+        "Iteration Id": [], "Number of Noise Terms": []}
+    # iteratively repeat the same experiments multiple times
+    for j in range(iters):
+        print("calculation iter %d..." % j, file=sys.stderr)
+        # iteratively do experiments over all the parameters
+        for i in range(len(params.values()[0])):
+            # exp: variable selection
+            corpus_slice, embeddings = exp_variable_selection(
+                dict_name, corpus_name, n_hidden=params["n_hidden"][i],
+                N=2, n_noise_term=params["n_noise_term"][i], n_epoches=params["n_epoches"][i],
+                learning_rate=params["learning_rate"][i], batch_size=params["batch_size"][i])
 
-        # # name of the plot
-        # plot_name = "hid%d_noise%d_epoch%d_bat%d" % \
-        #     (params["n_hidden"][i], params["n_noise_term"][i], \
-        #      params["n_epoches"][i], params["batch_size"][i])
-        # # path of the plot
-        # plot_path = "results/%s.pdf" % plot_name
-        # # plot the embeddings results
-        # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+            hit_rates = [
+                eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=k, type="avg_rate")
+                for k in Ks ]
 
-    # UNIT TEST ON EXP_VARIABLE_SELECTION
-    # parameters
-    n_hidden = 50
-    n_noise  = 0
-    n_epoch  = 150
-    n_batch  = 30
-    # name of the plot
-    plot_name = "2069_hid%d_noise%d_epoch%d_bat%d" % \
-        (n_hidden, n_noise, n_epoch, n_batch)
-    # exp: variable selection
-    corpus_slice, embeddings = exp_variable_selection(
-        dict_name, corpus_name, n_hidden=n_hidden,
-        N=2, n_noise_term=n_noise, n_epoches=n_epoch,
-        learning_rate=1e-3, batch_size=n_batch)
-    # path of the plot
-    plot_path = "results/%s.pdf" % plot_name
-    # plot the embeddings results
-    vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+            exp_data["Number of Results"]     += Ks
+            exp_data["Hit Rate"]              += hit_rates
+            exp_data["Iteration Id"]          += [ j for ki in range(len(Ks)) ]
+            exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
+
+    exp_df = pd.DataFrame(data=exp_data)
+    exp_df.to_pickle("exp_data_frame")
+    # exp_df = pd.read_pickle("exp_data_frame")
+    plot_rates(exp_df)
+
+    # # UNIT TEST ON EXP_VARIABLE_SELECTION
+    # # parameters
+    # n_hidden = 50
+    # n_noise  = 0
+    # n_epoch  = 150
+    # n_batch  = 30
+    # # name of the plot
+    # plot_name = "2069_hid%d_noise%d_epoch%d_bat%d" % \
+    #     (n_hidden, n_noise, n_epoch, n_batch)
+    # # exp: variable selection
+    # corpus_slice, embeddings = exp_variable_selection(
+    #     dict_name, corpus_name, n_hidden=n_hidden,
+    #     N=2, n_noise_term=n_noise, n_epoches=n_epoch,
+    #     learning_rate=1e-3, batch_size=n_batch)
+    # # path of the plot
+    # plot_path = "results/%s.pdf" % plot_name
+    # # plot the embeddings results
+    # # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+    # hit_rate = eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=10, type="avg_rate")
+    # print(hit_rate)

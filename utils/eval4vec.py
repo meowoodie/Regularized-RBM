@@ -22,11 +22,13 @@ def eval_by_cosine(vectors, labels,
     labels    = np.array([ label_set.index(label) for label in labels ])
     # calculate pairwise cosine distance for input vectors
     sim_mat   = cosine_similarity(vectors, dense_output=True)
+    # remove diagonal elements (similarity against itself) of similarity matrix
+    sim_mat   = sim_mat[~np.eye(sim_mat.shape[0],dtype=bool)].reshape(sim_mat.shape[0],-1)
     # sort similarity matrix by rows,
     # each row represents orders of similarities against other vectors.
     order_mat = sim_mat.argsort(axis=1)
-    # trim the matrix by removing the last column (similarity against itself)
-    order_mat = np.flip(order_mat[:, 0:-1], axis=1)
+    # flip the order matrix to make the elements with largest similarities be the first ones.
+    order_mat = np.flip(order_mat, axis=1)
     # convert order_mat to label_mat which only consists of zeros (uncorrelated)
     # and ones (correlated) i.e. the ground truth.
     label_mat = np.zeros(order_mat.shape)
