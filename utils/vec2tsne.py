@@ -21,11 +21,13 @@ import sys
 np.random.seed(100)
 
 LABELS = [ "burglary", "pedrobbery", "dijawan_adams", \
-           "jaydarious_morrison", "julian_tucker", "thaddeus_todd"]
+           "jaydarious_morrison", "julian_tucker", "thaddeus_todd", \
+           "ausu", "christian", "zone2_spas"]
 TEXTS  = [ "Burglary in Buckhead", "Ped Robbery in Buckhead", \
            "Ped Robbery by Suspect A", "Ped Robbery by Suspect M", \
-		   "Ped Robbery by Suspect J", "Ped Robbery by Suspect T"]
-COLORS = [ "g", "r", "c", "m", "b", "k" ]
+		   "Ped Robbery by Suspect J", "Ped Robbery by Suspect T", \
+           "Robbery by Suspect AT", "Robbery by Suspect C", "Armed Robbery in Spa"]
+COLORS = [ "g", "r", "c", "m", "b", "k", "y", "#fc4f30", "#8b8b8b" ]
 
 def label_loader(label_path, delimiter="\t"):
 	"""
@@ -76,7 +78,7 @@ def vec2tsne(lab_path, plot_path, vectors=None, vec_path=None, n=2):
 		fig, ax = plt.subplots(1, 1)
 		for label in list(set(labels)):
 			indices = [ i for i, x in enumerate(labels) if x == label ]
-			color   = COLORS[LABELS.index(label)] if label in LABELS else "y"
+			color   = COLORS[LABELS.index(label)] if label in LABELS else "#feffb3"
 			text    = TEXTS[LABELS.index(label)] if label in LABELS else "Random Case"
 			plt.scatter(embedded_vecs[indices, 0], embedded_vecs[indices, 1], c=color, \
 			            label=text, edgecolors='none', s=20)
