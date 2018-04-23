@@ -77,7 +77,7 @@ TODD_TERMS     = [5140,5577]
 # row ids of preserved documents in corpus
 PRESERV_DOCS  = LABEL_INDICES + RANOM_INDICES
 # key ids of preserved terms in specified vocabulary
-PRESERV_TERMS = BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
+PRESERV_TERMS = [] # BURGLARY_TERMS + PEDROB_TERMS + ADAMS_TERMS + MORRI_TERMS + TUCKR_TERMS + TODD_TERMS
 
 def plot_rates(df, time_name="Number of Noise Terms", value_name="Hit Rate", \
                unit_name="Iteration Id", condition_name="Number of Results",
@@ -139,15 +139,15 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  [i*5 for i in range(10)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100 for i in range(10)], #+ [200 for i in range(35)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-3 for i in range(10)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30 for i in range(10)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50 for i in range(10)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  [(i+1)*10 for i in range(300)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100 for i in range(100)] + [150 for i in range(200)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-3 for i in range(300)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(300)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(300)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
-    iters        = 100
+    iters        = 1
     label_inds   = range(69) # range(56)
     # path for resource
     dict_name   = "resource/dict/2069.bigram.dict"
