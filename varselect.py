@@ -85,8 +85,8 @@ def plot_rates(df, time_name="Number of Noise Terms", value_name="Hit Rate", \
     # plot as a pdf file
     with PdfPages(plot_path) as pdf:
         fig, ax = plt.subplots(1, 1)
-        sns.tsplot(time=time_name, value=value_name, \
-                   unit=unit_name, condition=condition_name, data=df)
+        sns.tsplot(time=time_name, value=value_name, unit=unit_name, \
+                   condition=condition_name, data=df, interpolate=True)
         pdf.savefig(fig)
 
 def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoches=20, \
@@ -139,7 +139,7 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  [(i+1)*200 + 1200 for i in range(4)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_noise_term":  [(i+1)*200 + 1200 for i in range(2)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
         "n_epoches":     [100 for i in range(4)] + [200 for i in range(0)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
         "learning_rate": [1e-2 for i in range(4)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
         "batch_size":    [30 for i in range(4)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
