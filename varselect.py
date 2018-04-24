@@ -147,7 +147,7 @@ if __name__ == "__main__":
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
-    iters        = 10
+    iters        = 5
     label_inds   = range(69) # range(56)
     # path for resource
     dict_name   = "resource/dict/2069.bigram.dict"
