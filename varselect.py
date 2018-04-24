@@ -139,15 +139,15 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  [(i+1)*10 for i in range(300)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100 for i in range(100)] + [150 for i in range(200)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-3 for i in range(300)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30 for i in range(300)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50 for i in range(300)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  [(i+1)*200 for i in range(30)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100 for i in range(10)] + [200 for i in range(20)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-2 for i in range(30)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(30)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(30)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
-    iters        = 1
+    iters        = 10
     label_inds   = range(69) # range(56)
     # path for resource
     dict_name   = "resource/dict/2069.bigram.dict"
