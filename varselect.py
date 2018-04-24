@@ -139,7 +139,7 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  [(i+1)*200 + 400 for i in range(4)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_noise_term":  [(i+1)*200 + 1200 for i in range(4)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
         "n_epoches":     [100 for i in range(4)] + [200 for i in range(0)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
         "learning_rate": [1e-2 for i in range(4)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
         "batch_size":    [30 for i in range(4)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
@@ -212,3 +212,7 @@ if __name__ == "__main__":
     # # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
     # hit_rate = eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=10, type="avg_rate")
     # print(hit_rate)
+
+    # # PLOT DIRECTLY VIA LOCAL DATA FRAME
+    # exp_df = pd.read_pickle("exp_data_frame")
+    # plot_rates(exp_df)
