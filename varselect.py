@@ -139,15 +139,15 @@ def exp_variable_selection(dict_name, corpus_name, N=2, n_noise_term=10, n_epoch
 if __name__ == "__main__":
 
     params = {
-        "n_noise_term":  [(i+1)*200 for i in range(30)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100 for i in range(10)] + [200 for i in range(20)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-2 for i in range(30)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30 for i in range(30)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50 for i in range(30)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_noise_term":  [(i+1)*200 for i in range(2)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
+        "n_epoches":     [100 for i in range(1)] + [200 for i in range(1)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-2 for i in range(2)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(2)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(2)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
-    iters        = 5
+    iters        = 100
     label_inds   = range(69) # range(56)
     # path for resource
     dict_name   = "resource/dict/2069.bigram.dict"
@@ -188,7 +188,7 @@ if __name__ == "__main__":
             exp_data["Number of Noise Terms"] += [ params["n_noise_term"][i] for ki in range(len(Ks)) ]
 
     exp_df = pd.DataFrame(data=exp_data)
-    exp_df.to_pickle("exp_data_frame")
+    exp_df.to_pickle("df_%d_to_%d_iter_%d" % (params["n_noise_term"][0], params["n_noise_term"][1], iters))
     # exp_df = pd.read_pickle("exp_data_frame")
     plot_rates(exp_df)
 
