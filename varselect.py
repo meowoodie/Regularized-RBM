@@ -140,10 +140,10 @@ if __name__ == "__main__":
 
     params = {
         "n_noise_term":  [(i+1)*200 + 1200 for i in range(2)], # [0,    5,    10,   15,   20,   25,   30,   35,   40,   45,   50],
-        "n_epoches":     [100 for i in range(4)] + [200 for i in range(0)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
-        "learning_rate": [1e-2 for i in range(4)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
-        "batch_size":    [30 for i in range(4)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
-        "n_hidden":      [50 for i in range(4)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
+        "n_epoches":     [100 for i in range(2)] + [200 for i in range(0)], # [100,  100,  100,  100,  200,  200,  200,  200,  200,  200,  200],
+        "learning_rate": [1e-2 for i in range(2)], # [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3],
+        "batch_size":    [30 for i in range(2)], # [30,   30,   30,   30,   30,   30,   30,   30,   30,   30,   30],
+        "n_hidden":      [50 for i in range(2)], # [50,   50,   50,   50,   50,   50,   50,   50,   50,   50,   50]
     }
     N            = 2  # N for n-gram
     Ks           = [20, 40, 60, 80]
