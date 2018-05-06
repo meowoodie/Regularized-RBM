@@ -1,22 +1,15 @@
 import tensorflow as tf
 from .rbm import RBM
-from .util import sample_bernoulli, sample_gaussian
+from .util import sample_bernoulli
 
 
-class GBRBM(RBM):
-    def __init__(self, n_visible, n_hidden, sample_visible=False, sigma=1, **kwargs):
-        self.sample_visible = sample_visible
-        self.sigma = sigma
-
-        RBM.__init__(self, n_visible, n_hidden, **kwargs)
+class BBRBM(RBM):
+    def __init__(self, *args, **kwargs):
+        RBM.__init__(self, *args, **kwargs)
 
     def _initialize_vars(self):
         hidden_p = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
-        visible_recon_p = tf.matmul(sample_bernoulli(hidden_p), tf.transpose(self.w)) + self.visible_bias
-
-        if self.sample_visible:
-            visible_recon_p = sample_gaussian(visible_recon_p, self.sigma)
-
+        visible_recon_p = tf.nn.sigmoid(tf.matmul(sample_bernoulli(hidden_p), tf.transpose(self.w)) + self.visible_bias)
         hidden_recon_p = tf.nn.sigmoid(tf.matmul(visible_recon_p, self.w) + self.hidden_bias)
 
         positive_grad = tf.matmul(tf.transpose(self.x), hidden_p)
@@ -42,5 +35,5 @@ class GBRBM(RBM):
         self.update_weights = [update_w, update_visible_bias, update_hidden_bias]
 
         self.compute_hidden = tf.nn.sigmoid(tf.matmul(self.x, self.w) + self.hidden_bias)
-        self.compute_visible = tf.matmul(self.compute_hidden, tf.transpose(self.w)) + self.visible_bias
-        self.compute_visible_from_hidden = tf.matmul(self.y, tf.transpose(self.w)) + self.visible_bias
+        self.compute_visible = tf.nn.sigmoid(tf.matmul(self.compute_hidden, tf.transpose(self.w)) + self.visible_bias)
+        self.compute_visible_from_hidden = tf.nn.sigmoid(tf.matmul(self.y, tf.transpose(self.w)) + self.visible_bias)
