@@ -10,19 +10,23 @@ import numpy as np
 from gensim import corpora
 from gensim.matutils import corpus2dense
 
-from rbm import SemiSupervRBM
+from utils.mat2img import mat2img
+from utils.vec2tsne import vec2tsne
+from utils.eval4vec import eval_by_cosine
+
 from rbm import GBRBM
+from rbm import RegRBM
 
 if __name__ == "__main__":
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
-    info_name   = "data/new.info.txt"
+    info_name   = "data/2000+56.dataset/new.info.txt"
 
     ngram_dict   = corpora.Dictionary.load(dict_name)
     corpus_tfidf = corpora.MmCorpus(corpus_name)
 
     # get corpus matrix
-    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:256]
+    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
     n_x    = data_x.shape[1]
     print(data_x.shape)
 
@@ -38,7 +42,7 @@ if __name__ == "__main__":
         d = np.zeros(n_y)
         d[label_set.index(label)] = 1.
         data_y.append(d)
-    data_y    = np.array(data_y)[0:256]
+    data_y    = np.array(data_y)
 
     print(data_y.shape)
 
@@ -48,13 +52,25 @@ if __name__ == "__main__":
     # rbm.fit(data_x, data_y, n_epoches=100, shuffle=True)
     # embeddings = rbm.transform(data_x).round().astype(int)
 
-    rbm = GBRBM(n_visible=n_x, n_hidden=1000, \
-                learning_rate=.1, momentum=0.95, err_function='mse', \
+    rbm = RegRBM(n_visible=n_x, n_hidden=1000, \
+                learning_rate=1e-3, momentum=0.95, err_function='mse', \
                 use_tqdm=False, sample_visible=False, sigma=1.)
-    rbm.fit(data_x, n_epoches=25, batch_size=20, \
+    rbm.fit(data_x, n_epoches=20, batch_size=20, \
             shuffle=True, verbose=True)
-    embeddings = rbm.transform(data_x).round().astype(int)
 
-    # save embeddings
-    file_name="new.2k.corpus"
-    np.savetxt("resource/embeddings/%s.txt" % file_name, embeddings, delimiter=',')
+    # rbm = GBRBM(n_visible=n_x, n_hidden=1000, \
+    #             learning_rate=1e-3, momentum=0.95, err_function='mse', \
+    #             use_tqdm=False, sample_visible=False, sigma=1.)
+    # rbm.fit(data_x, n_epoches=10, batch_size=20, \
+    #         shuffle=True, verbose=True)
+    embeddings = rbm.transform(data_x).round().astype(int)
+    recon_x    = rbm.reconstruct(data_x)
+    print(recon_x.shape)
+
+    recon_x[recon_x < 0] = 0
+    # mat2img(-1 * np.log(recon_x))
+
+    # # save embeddings
+    file_name="reg.2k.recon"
+    np.savetxt("resource/embeddings/%s.txt" % file_name, recon_x, delimiter=',')
+    # vec2tsne(info_name, "results/test.pdf", vectors=embeddings, n=2)

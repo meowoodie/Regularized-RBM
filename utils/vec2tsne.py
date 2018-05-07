@@ -20,13 +20,20 @@ import sys
 
 np.random.seed(100)
 
+# LABELS = [ "burglary", "pedrobbery", "dijawan_adams", \
+#            "jaydarious_morrison", "julian_tucker", "thaddeus_todd", \
+#            "ausu", "christian", "zone2_spas"]
+# TEXTS  = [ "Burglary in Buckhead", "Ped Robbery in Buckhead", \
+#            "Ped Robbery by Suspect A", "Ped Robbery by Suspect M", \
+# 		   "Ped Robbery by Suspect J", "Ped Robbery by Suspect T", \
+#            "Robbery by Suspect AT", "Robbery by Suspect C", "Armed Robbery in Spa"]
+# COLORS = [ "g", "r", "c", "m", "b", "k", "y", "#fc4f30", "#8b8b8b" ]
+
 LABELS = [ "burglary", "pedrobbery", "dijawan_adams", \
-           "jaydarious_morrison", "julian_tucker", "thaddeus_todd", \
-           "ausu", "christian", "zone2_spas"]
+           "jaydarious_morrison", "julian_tucker", "thaddeus_todd"]
 TEXTS  = [ "Burglary in Buckhead", "Ped Robbery in Buckhead", \
            "Ped Robbery by Suspect A", "Ped Robbery by Suspect M", \
-		   "Ped Robbery by Suspect J", "Ped Robbery by Suspect T", \
-           "Robbery by Suspect AT", "Robbery by Suspect C", "Armed Robbery in Spa"]
+		   "Ped Robbery by Suspect J", "Ped Robbery by Suspect T"]
 COLORS = [ "g", "r", "c", "m", "b", "k", "y", "#fc4f30", "#8b8b8b" ]
 
 def label_loader(label_path, delimiter="\t"):
@@ -70,15 +77,15 @@ def vec2tsne(lab_path, plot_path, vectors=None, vec_path=None, n=2):
 	# organize the points in a proper order (reverse) in avoid of random points
 	# coverring labeled points in the plot
 	embedded_vecs = np.flip(embedded_vecs, 0) # to make labeled cases on the top of other points
-	labels        = np.flip(labels[0:256], 0)
-	annotations   = np.flip(annotations[0:256], 0)
+	labels        = np.flip(labels, 0)
+	annotations   = np.flip(annotations, 0)
 
 	# plot as a pdf file
 	with PdfPages(plot_path) as pdf:
 		fig, ax = plt.subplots(1, 1)
 		for label in list(set(labels)):
 			indices = [ i for i, x in enumerate(labels) if x == label ]
-			color   = COLORS[LABELS.index(label)] if label in LABELS else "#feffb3"
+			color   = COLORS[LABELS.index(label)] if label in LABELS else "y" #"#feffb3"
 			text    = TEXTS[LABELS.index(label)] if label in LABELS else "Random Case"
 			plt.scatter(embedded_vecs[indices, 0], embedded_vecs[indices, 1], c=color, \
 			            label=text, edgecolors='none', s=20)
@@ -100,4 +107,4 @@ if __name__ == "__main__":
 	lab_path = args.lpath
 	plt_path = args.ppath
 
-	vec2tsne(lab_path, vec_path=vec_path, plot_path="results/test.pdf")
+	vec2tsne(lab_path, vec_path=vec_path, plot_path="results/test1.pdf")
