@@ -65,14 +65,23 @@ class RBM:
     def _initialize_vars(self):
         pass
 
-    def get_zero(self, batch_x):
+    def get_nonzero_vars(self, batch_x):
         """
-        return zero variables of reconstructed x.
+        return non-zero variables of reconstructed x.
         """
         recon_x = self.reconstruct(batch_x)
         recon_x[recon_x < self.t] = 0
-        n_zro_vars = len(np.where(~recon_x.any(axis=0))[0])
-        return n_zro_vars
+        zro_vars = np.where(recon_x.any(axis=0))[0].astype(int)
+        return zro_vars
+
+    def get_zero(self, batch_x):
+        """
+        return number of zero variables of reconstructed x.
+        """
+        recon_x = self.reconstruct(batch_x)
+        recon_x[recon_x < self.t] = 0
+        n_zeros = len(np.where(~recon_x.any(axis=0))[0])
+        return n_zeros
 
     def get_err(self, batch_x):
         return self.sess.run(self.compute_err, feed_dict={self.x: batch_x})
@@ -145,7 +154,7 @@ class RBM:
             errs = np.hstack([errs, epoch_errs])
             zros = np.hstack([zros, epoch_zros])
 
-        return errs, zeros
+        return errs, zros
 
     def get_weights(self):
         return self.sess.run(self.w),\
