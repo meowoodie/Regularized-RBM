@@ -209,10 +209,5 @@ if __name__ == "__main__":
     # # path of the plot
     # plot_path = "results/%s.pdf" % plot_name
     # # plot the embeddings results
-    # # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
-    # hit_rate = eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=10, type="avg_rate")
-    # print(hit_rate)
-
-    # # PLOT DIRECTLY VIA LOCAL DATA FRAME
-    # exp_df = pd.read_pickle("exp_data_frame")
-    # plot_rates(exp_df)
+    # vec2tsne(label_path, plot_path, vectors=embeddings, n=2)
+    # # hit_rate = eval_by_cosine(embeddings, labels, label_inds=label_inds, top_k=10, type="avg_rate")
