@@ -26,7 +26,7 @@ def error_plotter(errs, labels=[], path="results/errors.pdf"):
     with PdfPages(path) as pdf:
         fig, ax = plt.subplots(1, 1)
         for ind in range(len(labels)):
-            plt.plot(errs[ind], label=labels[ind])
+            plt.plot(errs[ind], label=labels[ind], linewidth=4.0)
         plt.legend()
         plt.xlabel("Iteration")
         plt.ylabel("Mean Square Error")
@@ -41,7 +41,7 @@ def zeros_plotter(zros, labels=[], path="results/zeros.pdf"):
     with PdfPages(path) as pdf:
         fig, ax = plt.subplots(1, 1)
         for ind in range(len(labels)):
-            plt.plot(zros[ind], label=labels[ind])
+            plt.plot(zros[ind], label=labels[ind], linewidth=4.0)
         plt.legend()
         plt.xlabel("Iteration")
         plt.ylabel("Number of Eliminated Variables")

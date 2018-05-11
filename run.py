@@ -34,7 +34,7 @@ if __name__ == "__main__":
     t   = 1e-2
     lam = 1e-3
     lr  = 1e-3
-    n_epoches = 25
+    n_epoches = 20
 
     rbm = RegRBM(n_visible=n_x, n_hidden=1000, t=t, lam=lam, \
                  learning_rate=lr, momentum=0.95, err_function="mse", \
@@ -42,32 +42,12 @@ if __name__ == "__main__":
     errs, zeros = rbm.fit(data_x, n_epoches=n_epoches, batch_size=20, \
                           shuffle=True, verbose=True)
 
-    embeddings = rbm.transform(data_x).round().astype(int)
+    embeddings   = rbm.transform(data_x).round().astype(int)
+    nonzero_vars = rbm.get_nonzero_vars(data_x)
 
     # save results
+    np.savetxt("resource/vars.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), nonzero_vars, delimiter=',')
     np.savetxt("resource/errors.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), errs, delimiter=',')
     np.savetxt("resource/zeros.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), zeros, delimiter=',')
-    # np.savetxt("resource/embeddings/2k.embeddings.reg.1e-3.lr.1e-3.txt", embeddings, delimiter=',')
+    np.savetxt("resource/embeddings/2k.embeddings.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), embeddings, delimiter=',')
     # vec2tsne(info_name, "results/test.pdf", vectors=embeddings, n=2)
-
-    # # get labels info
-    # labels = None
-    # with open(info_name, "r") as f:
-    #     # fetch labels
-    #     labels = np.array([ line.strip().split("\t")[1] for line in f ])
-    # label_set = list(set(labels))
-    # n_y       = len(set(labels))
-    # data_y    = []
-    # for label in labels:
-    #     d = np.zeros(n_y)
-    #     d[label_set.index(label)] = 1.
-    #     data_y.append(d)
-    # data_y    = np.array(data_y)
-    #
-    # print(data_y.shape)
-
-    # rbm = SemiSupervRBM(n_y=n_y, n_x=n_x, n_h=1000, alpha=.5, batch_size=20, \
-    #                     learning_rate=.01, momentum=0.95, err_function='mse', \
-    #                     sample_visible=False)
-    # rbm.fit(data_x, data_y, n_epoches=100, shuffle=True)
-    # embeddings = rbm.transform(data_x).round().astype(int)

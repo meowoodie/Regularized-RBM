@@ -18,6 +18,8 @@ import argparse
 import random
 import sys
 
+np.random.seed(100)
+
 # LABELS = [ "burglary", "pedrobbery", "dijawan_adams", \
 #            "jaydarious_morrison", "julian_tucker", "thaddeus_todd", \
 #            "ausu", "christian", "zone2_spas"]
