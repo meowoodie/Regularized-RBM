@@ -21,14 +21,14 @@ from sklearn.model_selection import KFold
 if __name__ == "__main__":
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
-    log_lams    = np.linspace(-10, -9, num=11)[1:]
+    log_lams    = np.linspace(-10, 0, num=101)[1:]
     lams        = np.exp(log_lams)
 
     ngram_dict   = corpora.Dictionary.load(dict_name)
     corpus_tfidf = corpora.MmCorpus(corpus_name)
 
     # get corpus matrix
-    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()[0:40]
+    data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
     n_x    = data_x.shape[1]
 
     # k-fold cross validation
