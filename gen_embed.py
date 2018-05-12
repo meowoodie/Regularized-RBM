@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-This is the main script for testing algorithm on real dataset, which includes
-helpful function for data preparing, model training, and visualizing.
+This is the main script for generating embeddings by RegRBM.
 """
+from __future__ import print_function
+
 import numpy as np
 
 from gensim import corpora

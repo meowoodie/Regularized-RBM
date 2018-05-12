@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-This is the main script for testing algorithm on real dataset, which includes
-helpful function for data preparing, model training, and visualizing.
+This is the main script for testing performance of embeddings with selected
+terms (produced by LASSO).
 """
 from __future__ import print_function
 
@@ -24,7 +24,6 @@ from utils.mat2img import mat2img
 from utils.vec2tsne import vec2tsne
 from utils.eval4vec import eval_by_cosine
 from rbm import GBRBM
-# from rbm import SemiSupervRBM
 
 # row ids of random documents
 # RANOM_INDICES = [
@@ -149,6 +148,7 @@ if __name__ == "__main__":
     Ks           = [20, 40, 60, 80]
     iters        = 100
     label_inds   = range(69) # range(56)
+
     # path for resource
     dict_name   = "resource/dict/2069.bigram.dict"
     corpus_name = "resource/corpus/2069.bigram.doc.tfidf.corpus"
@@ -189,7 +189,6 @@ if __name__ == "__main__":
 
     exp_df = pd.DataFrame(data=exp_data)
     exp_df.to_pickle("df_%d_to_%d_iter_%d" % (params["n_noise_term"][0], params["n_noise_term"][-1], iters))
-    # exp_df = pd.read_pickle("exp_data_frame")
     plot_rates(exp_df)
 
     # # UNIT TEST ON EXP_VARIABLE_SELECTION
