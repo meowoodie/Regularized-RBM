@@ -21,7 +21,6 @@ from sklearn.model_selection import KFold
 if __name__ == "__main__":
     dict_name   = "resource/dict/2k.bigram.dict"
     corpus_name = "resource/corpus/2k.bigram.doc.tfidf.corpus"
-    info_name   = "data/2000+56.dataset/new.info.txt"
     log_lams    = np.linspace(-10, -9, num=11)[1:]
     lams        = np.exp(log_lams)
 
