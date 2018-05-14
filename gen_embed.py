@@ -11,7 +11,7 @@ import numpy as np
 from gensim import corpora
 from gensim.matutils import corpus2dense
 
-from utils.mat2img import mat2img
+from utils.plotter import matrix_plotter
 from utils.vec2tsne import vec2tsne
 from utils.eval4vec import eval_by_cosine
 
@@ -29,6 +29,9 @@ if __name__ == "__main__":
     # get corpus matrix
     data_x = corpus2dense(corpus_tfidf, num_terms=len(ngram_dict)).transpose()
     n_x    = data_x.shape[1]
+
+    # data_x[data_x < 1e-10] = 1e-10
+    # matrix_plotter(-1 * np.log(data_x))
 
     print(data_x.shape)
 
