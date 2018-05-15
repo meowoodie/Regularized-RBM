@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from gensim import corpora
 
 def matrix_plotter(matrix, path="results/corpus_embeddings.pdf"):
     plt.rc("text", usetex=True)
@@ -54,22 +55,46 @@ def zeros_plotter(zros, labels=[], path="results/zeros.pdf"):
         plt.tight_layout()
         pdf.savefig(fig)
 
-def cv_plotter(errs, zros, path="results/cv.pdf"):
+def cv_plotter(errs, zros, lam, path="results/cv.pdf"):
     plt.rc("text", usetex=True)
     plt.rc("font", family="serif")
+    # performance formula
     err = errs.mean(axis=1)
     zro = zros.mean(axis=1)
-    per = err / zro
+    perf = err / np.exp((zro-zro.min()+1)/500)
+    perf_max = errs.max(axis=1) / np.exp((zros.min(axis=1) - zros.min())/500)
+    perf_min = errs.min(axis=1) / np.exp((zros.max(axis=1) - zros.min())/500)
     # plot as a pdf file
     with PdfPages(path) as pdf:
         fig, ax = plt.subplots(1, 1)
-        plt.plot(np.linspace(-10, 0, num=11)[1:], per, linewidth=4.0)
+        plt.plot(lam, perf, c="blue", linestyle=":", linewidth=2.0)
+        ax.errorbar(lam, perf, yerr=[perf_min, perf_max], \
+                    fmt='*', ecolor="gray", capthick=1)
         plt.xlabel("$\log \lambda$")
-        plt.ylabel("Performance")
-        plt.grid(True)
+        plt.ylabel("Error / $\exp$(Number of zero variables)")
+        # plt.grid(True)
         plt.tight_layout()
         pdf.savefig(fig)
 
+def intensity_plotter(intensity, dictionary, k=20, path="results/intensity.pdf"):
+    # top k keywords according to intensity
+    top_k_inds = intensity.argsort()[-1*k:][::-1]
+    top_k_keywords = [ dictionary[ind] for ind in top_k_inds ]
+    # print(top_k_keywords)
+    # plot as a pdf file
+    with PdfPages(path) as pdf:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 3))
+        ax.vlines(range(len(intensity)), [0], intensity)
+        ax.plot(top_k_inds, intensity[top_k_inds], '^')
+        for i, keyword in enumerate(top_k_keywords):
+            ax.annotate(keyword, (top_k_inds[i], intensity[top_k_inds][i]+1e-4), size=5, color="red")
+        ax.set_ylabel('Standard deviation of tf-idf intensity')
+        ax.set_xlabel('Keywords')
+        # Turn off tick labels
+        ax.get_xaxis().set_ticks([])
+        ax.get_yaxis().set_ticks([])
+        plt.tight_layout()
+        pdf.savefig(fig)
 
 if __name__ == "__main__":
     # PLOT ERROS AND ZEROS RESPECTIVELY
@@ -101,9 +126,17 @@ if __name__ == "__main__":
     # PLOT CROSS-VALIDATION FOR LAMBDA
     errs = np.loadtxt("resource/cv_errs.txt", delimiter=",")
     zros = np.loadtxt("resource/cv_zeros.txt", delimiter=",")
-    cv_plotter(errs, zros, path="results/cv.pdf")
+    cv_plotter(errs, zros, np.linspace(-10, 0, num=11)[1:], path="results/cv.pdf")
 
     # PLOT EMBEDDINGS
+    # dictionary
+    dict_name  = "resource/dict/2k.bigram.dict"
+    ngram_dict = corpora.Dictionary.load(dict_name)
+    # load embeddings
     embeddings = np.loadtxt("resource/embeddings/reg.1e-3.lr.1e-3.2k.recon.txt", delimiter=",")
-    embeddings[embeddings < 1e-2] = 1e-10
-    matrix_plotter(-1 * np.log(embeddings), path="results/reg_embeddings.pdf")
+    # convert to intensity
+    embeddings[embeddings < 1e-2] = 1e-5
+    intensity = (embeddings).std(axis=0)
+    print(embeddings.shape)
+    # print(intensity)
+    intensity_plotter(intensity, ngram_dict)
