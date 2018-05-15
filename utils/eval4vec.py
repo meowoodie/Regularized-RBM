@@ -38,11 +38,15 @@ def eval_by_cosine(vectors, labels,
             for j in order_mat[i, :] ])        # for all vectors in matrix
     # calculate hit rate according to different evaluation methods
     if type == "mat_rate":
-        hit_rate = label_mat[label_inds, 0:top_k].sum() / label_mat[label_inds, :].sum()
+        score = label_mat[label_inds, 0:top_k].sum() / label_mat[label_inds, :].sum()
     elif type == "avg_rate":
-        hit_rate = (label_mat[label_inds, 0:top_k].sum(axis=1) / label_mat[label_inds, :].sum(axis=1)).mean()
-
-    return hit_rate
+        score = (label_mat[label_inds, 0:top_k].sum(axis=1) / label_mat[label_inds, :].sum(axis=1)).mean()
+    elif type == "f_measure":
+        P = label_mat[label_inds, 0:top_k].sum(axis=1) / top_k
+        R = label_mat[label_inds, 0:top_k].sum(axis=1) / label_mat[label_inds, :].sum(axis=1)
+        F = 2 * P * R / (P + R + 1e-5)
+        score = (F * label_mat[label_inds, :].sum(axis=1)).sum() / label_mat[label_inds, :].sum()
+    return score
 
 
 

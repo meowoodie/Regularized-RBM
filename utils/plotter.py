@@ -96,6 +96,39 @@ def intensity_plotter(intensity, dictionary, k=20, path="results/intensity.pdf")
         plt.tight_layout()
         pdf.savefig(fig)
 
+def bar_plotter(path="results/fscore.pdf"):
+    # dataset
+    # RBM with regularization
+    score_reg_rbm = [0.15831824908807041, 0.14106623564416126, 0.1094700518782232, 0.096323801425203318]
+    # regular RBM
+    score_rbm = [0.076563426203208898, 0.072932631783345955, 0.063187276466536366, 0.055808217241579479]
+    # LDA
+    score_lda = [0.054438022759614353, 0.065424181538917603, 0.0711249791059681, 0.069326223352732738]
+    # plot as pdf
+    plt.rc("text", usetex=True)
+    plt.rc("font", family="serif")
+    with PdfPages(path) as pdf:
+        N = 4
+        ind = np.arange(4) # the x locations for the groups
+        width = 0.2        # the width of the bars
+
+        fig, ax = plt.subplots()
+        rects1 = ax.bar(ind - width, score_reg_rbm, width, color='b')
+        rects2 = ax.bar(ind, score_rbm, width, color='r')
+        rects3 = ax.bar(ind + width, score_lda, width, color='g')
+
+        # add some text for labels, title and axes ticks
+        ax.set_ylabel('$F_1$ score')
+        ax.set_xlabel('Number of selected events given a query')
+        ax.set_xticks(ind)
+        ax.set_xticklabels(('20', '40', '80', '100'))
+
+        ax.legend((rects1[0], rects2[0], rects3[0]), ('RBM ($\lambda=10^{-3}$)', 'regular RBM ($\lambda=0$)', 'LDA'))
+
+        plt.grid(True)
+        plt.tight_layout()
+        pdf.savefig(fig)
+
 if __name__ == "__main__":
     # PLOT ERROS AND ZEROS RESPECTIVELY
     # plot errors
@@ -137,6 +170,7 @@ if __name__ == "__main__":
     # convert to intensity
     embeddings[embeddings < 1e-2] = 1e-5
     intensity = (embeddings).std(axis=0)
-    print(embeddings.shape)
-    # print(intensity)
     intensity_plotter(intensity, ngram_dict)
+
+    # PLOT F-MEASURE BAR FOR EMBEDDINGS
+    bar_plotter()
