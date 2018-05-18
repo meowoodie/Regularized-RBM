@@ -17,9 +17,23 @@ We solve this optimization problem by gradient descent (note that this is a non-
 
 This work is based on [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm). The regRBM has remained same API as [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm) does.
 
+Below is a simple example on how to train a regRBM:
+```python
+rbm = RegRBM(n_visible=n_x, n_hidden=1000, t=t, lam=lam, \
+             learning_rate=lr, momentum=0.95, err_function="mse", \
+             sample_visible=False, sigma=1.)
+errs, zeros = rbm.fit(data_x, n_epoches=n_epoches, batch_size=20, \
+                      shuffle=True, verbose=True)
+```
+where additional parameters `t` is the constant that controls the threshold for disabling variables, and `lam` is the factor of the regularization. 
+
 ### Experiment
 
+> Fitted RBM with and without designed penalty term over 2,056 crime text (including 7,038 keywords). Under same experiment settings, (a): training errors over iterations; (b): numbers of eliminated (disabled) variables over iterations, and (c): result of  cross-validation over different lambda value.
+
 ![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp1.png)
+
+> Selected features: (a): the standard deviations of tf-idf intensity over 2,056 crime text; (b): the same plot as (a) but the tf-idf intensity is reconstructed by a fitted RBM with regularization by taking the raw data as input. Top 15 keywords with the highest standard deviations have been annotated by the side of corresponding bars. The *x*-axis is the 7,038 keywords, and the *y*-axis is the standard deviations of each keyword.
 
 ![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp2.png)
 
