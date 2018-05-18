@@ -119,11 +119,11 @@ def bar_plotter(path="results/fscore.pdf"):
 
         # add some text for labels, title and axes ticks
         ax.set_ylabel('$F_1$ score')
-        ax.set_xlabel('Number of selected events given a query')
+        ax.set_xlabel('Number of selected events given a query $N(q)$')
         ax.set_xticks(ind)
         ax.set_xticklabels(('20', '40', '80', '100'))
 
-        ax.legend((rects1[0], rects2[0], rects3[0]), ('RBM ($\lambda=10^{-3}$)', 'regular RBM ($\lambda=0$)', 'LDA'))
+        ax.legend((rects1[0], rects2[0], rects3[0]), ('regularized RBM ($\lambda=10^{-3}$)', 'RBM ($\lambda=0$)', 'LDA'))
 
         plt.grid(True)
         plt.tight_layout()
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # PLOT CROSS-VALIDATION FOR LAMBDA
     errs = np.loadtxt("resource/cv_errs.txt", delimiter=",")
     zros = np.loadtxt("resource/cv_zeros.txt", delimiter=",")
-    cv_plotter(errs, zros, np.linspace(-10, 0, num=11)[1:], path="results/cv.pdf")
+    cv_plotter(errs, zros, np.linspace(-15, 0, num=31)[1:], path="results/cv.pdf")
 
     # PLOT EMBEDDINGS
     # dictionary
