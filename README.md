@@ -7,11 +7,11 @@ Directly learning the statistical dependencies between all observed variables in
 
 Thus, given one training data x, we need to solve the following optimization problem. it This leads to our new formulation which performs the selection of observed variables for RBM:
 
-![loglikelihood](https://github.com/meowoodie/RegRBM/tree/master/imgs/eq1.png)
+![loglikelihood](https://github.com/meowoodie/RegRBM/blob/master/imgs/eq1.png)
 
 We solve this optimization problem by gradient descent (note that this is a non-convex problem and gradient descent is a default approach to solve it). By introducing this penalty term, the gradients w_ij and b_i can be rewritten as follows:
 
-![gradients](https://github.com/meowoodie/RegRBM/tree/master/imgs/eq2.png)
+![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/eq2.png)
 
 ### How to use it
 
@@ -19,9 +19,9 @@ This work is based on [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm)
 
 ### Experiment
 
-![gradients](https://github.com/meowoodie/RegRBM/tree/master/imgs/exp1.png)
+![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp1.png)
 
-![gradients](https://github.com/meowoodie/RegRBM/tree/master/imgs/exp2.png)
+![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp2.png)
 
 ### References
 - [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm)
