@@ -5,7 +5,7 @@ Regularized RBM for Feature Selection and Embedding
 
 Directly learning the statistical dependencies between all observed variables in RBM will bring noisy information from irrelevant variables into the model. Thus, we introduce a *l1*-regularizer to mitigate the impact of those noisy variables specifically. To achieve this, we impose an *l1* penalty on the activation probability. Here t is a very small constant, which penalizes the reconstructed observed variables that are sensitive to large values. This penalty introduces a natural way to select the most important features (correspond to observed variables in RBM). A nice feature of this penalty is that the corresponding gradient can be computed easily.
 
-Thus, given one training data x, we need to solve the following optimization problem. it This leads to our new formulation which performs the selection of observed variables for RBM:
+Thus, given one training data x, we need to solve the following optimization problem. This leads to our new formulation which performs the selection of observed variables for RBM:
 
 ![loglikelihood](https://github.com/meowoodie/RegRBM/blob/master/imgs/eq1.png)
 
@@ -38,6 +38,6 @@ where additional parameters `t` is the constant that controls the threshold for 
 ![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp2.png)
 
 ### References
-- Github: [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm)
-- Paper: [**Preprint** S. Zhu and Y. Xie, "Text Event Embeddings with Unsupervised Feature Selection"](https://arxiv.org/pdf/1710.10513.pdf)
+- Paper: [**Preprint** S. Zhu and Y. Xie, "Crime Event Embeddings with Unsupervised Feature Selection"](https://arxiv.org/pdf/1806.06095.pdf)
 - Paper: [S. Zhu and Y. Xie, "Crime incidents embedding using restricted boltzmann machines," 2018 IEEE International Conference on Acoustics, Speech and Signal Processing, 2018.](https://arxiv.org/pdf/1710.10513.pdf)
+- Github: [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm)
