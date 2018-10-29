@@ -102,28 +102,35 @@ def bar_plotter(path="results/fscore.pdf"):
     score_reg_rbm = [0.15831824908807041, 0.14106623564416126, 0.1094700518782232, 0.096323801425203318]
     # regular RBM
     score_rbm = [0.076563426203208898, 0.072932631783345955, 0.063187276466536366, 0.055808217241579479]
+    # SVD
+    score_svd = [0.15337031347221972, 0.13769841598939312, 0.11522019368164071, 0.10800105552200189]
     # LDA
     score_lda = [0.054438022759614353, 0.065424181538917603, 0.0711249791059681, 0.069326223352732738]
+    # Autoencoder
+    score_ae  = [0.020288035440106472, 0.014952014571509634, 0.012322640429558076, 0.012212399671753981]
     # plot as pdf
     plt.rc("text", usetex=True)
     plt.rc("font", family="serif")
     with PdfPages(path) as pdf:
         N = 4
         ind = np.arange(4) # the x locations for the groups
-        width = 0.2        # the width of the bars
+        width = 0.1        # the width of the bars
 
         fig, ax = plt.subplots()
-        rects1 = ax.bar(ind - width, score_reg_rbm, width, color='b')
-        rects2 = ax.bar(ind, score_rbm, width, color='r')
-        rects3 = ax.bar(ind + width, score_lda, width, color='g')
+        rects1 = ax.bar(ind - 2*width, score_reg_rbm, width, color='red')
+        rects2 = ax.bar(ind - width, score_rbm, width, color='orange')
+        rects3 = ax.bar(ind, score_svd, width, color='blue')
+        rects4 = ax.bar(ind + width, score_lda, width, color='green')
+        rects5 = ax.bar(ind + 2*width, score_ae, width, color='grey')
 
         # add some text for labels, title and axes ticks
         ax.set_ylabel('$F_1$ score')
-        ax.set_xlabel('Number of selected events given a query $N(q)$')
+        ax.set_xlabel('Number of selected events given a query ($N$)')
         ax.set_xticks(ind)
         ax.set_xticklabels(('20', '40', '80', '100'))
 
-        ax.legend((rects1[0], rects2[0], rects3[0]), ('regularized RBM ($\lambda=10^{-3}$)', 'RBM ($\lambda=0$)', 'LDA'))
+        ax.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]),
+            ('regularized RBM ($\lambda=10^{-3}$)', 'RBM ($\lambda=0$)', 'Truncated SVD', 'LDA', 'Denoising Autoencoder'))
 
         plt.grid(True)
         plt.tight_layout()
