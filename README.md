@@ -38,6 +38,6 @@ where additional parameters `t` is the constant that controls the threshold for 
 ![gradients](https://github.com/meowoodie/RegRBM/blob/master/imgs/exp2.png)
 
 ### References
-- Paper: [**Preprint** S. Zhu and Y. Xie, "Crime Event Embeddings with Unsupervised Feature Selection"](https://arxiv.org/pdf/1806.06095.pdf)
-- Paper: [S. Zhu and Y. Xie, "Crime incidents embedding using restricted boltzmann machines," 2018 IEEE International Conference on Acoustics, Speech and Signal Processing, 2018.](https://arxiv.org/pdf/1710.10513.pdf)
+- Paper: [S. Zhu and Y. Xie, "Crime Event Embeddings with Unsupervised Feature Selection", 2019 IEEE International Conference on Acoustics, Speech and Signal Processing, 2019.](https://arxiv.org/pdf/1806.06095.pdf)
+- Paper: [S. Zhu and Y. Xie, "Crime incidents embedding using restricted boltzmann machines", 2018 IEEE International Conference on Acoustics, Speech and Signal Processing, 2018.](https://arxiv.org/pdf/1710.10513.pdf)
 - Github: [tensorfow-rbm](https://github.com/meownoid/tensorfow-rbm)
