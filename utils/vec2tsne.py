@@ -87,7 +87,7 @@ def vec2tsne(lab_path, plot_path, vectors=None, vec_path=None, n=2):
 			indices = [ i for i, x in enumerate(labels) if x == label ]
 			color   = COLORS[LABELS.index(label)] if label in LABELS else "y"
 			text    = TEXTS[LABELS.index(label)] if label in LABELS else "Random Case"
-                        size    = 20 if label in LABELS else 10
+			size    = 20 if label in LABELS else 10
 			plt.scatter(embedded_vecs[indices, 0], embedded_vecs[indices, 1], c=color, \
 			            label=text, edgecolors='none', s=size)
 		plt.legend()

@@ -54,10 +54,10 @@ if __name__ == "__main__":
     label_path = "data/new.info.txt"
     labels     = []
     with open(label_path, "r") as fhandler:
-		for line in fhandler:
-			doc_ind  = line.strip().split("\t")[0]
-			catagory = line.strip().split("\t")[1]
-			labels.append(catagory)
+        for line in fhandler:
+            doc_ind  = line.strip().split("\t")[0]
+            catagory = line.strip().split("\t")[1]
+            labels.append(catagory)
 
     vectors = np.loadtxt("resource/embeddings/sub.2k.corpus.txt", delimiter=",")
     eval_by_cosine(vectors, labels[0:256], type="avg_rate")

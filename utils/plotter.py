@@ -8,10 +8,16 @@ This script provides functions for visualizing 1D & 2D tensors (array and matrix
 import sys
 import argparse
 import numpy as np
+import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from gensim import corpora
+
+font = {'family' : 'normal',
+        # 'weight' : 'bold',
+        'size'   : 18}
+matplotlib.rc('font', **font)
 
 def matrix_plotter(matrix, path="results/corpus_embeddings.pdf"):
     plt.rc("text", usetex=True)
@@ -70,7 +76,7 @@ def cv_plotter(errs, zros, lam, path="results/cv.pdf"):
         plt.plot(lam, perf, c="blue", linestyle=":", linewidth=2.0)
         ax.errorbar(lam, perf, yerr=[perf_min, perf_max], \
                     fmt='*', ecolor="gray", capthick=1)
-        plt.xlabel("$\log \lambda$")
+        plt.xlabel("$\log \delta$")
         plt.ylabel("Error / $\exp$(Number of zero variables)")
         # plt.grid(True)
         plt.tight_layout()
@@ -145,10 +151,10 @@ if __name__ == "__main__":
     err4 = np.loadtxt("resource/errors.lam0e+00.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
     errs = np.stack([err1, err2, err3, err4], axis=1).transpose()
     error_plotter(errs, labels=[
-        r'$\lambda=1 \times 10^{-3}$',
-        r'$\lambda=5 \times 10^{-4}$',
-        r'$\lambda=1 \times 10^{-4}$',
-        r'$\lambda=0$ (without penalty)'],
+        r'$\delta=1 \times 10^{-3}$',
+        r'$\delta=5 \times 10^{-4}$',
+        r'$\delta=1 \times 10^{-4}$',
+        r'$\delta=0$ (without penalty)'],
         path="results/errors.pdf")
     # plot zeros
     zro1 = np.loadtxt("resource/zeros.lam1e-03.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
@@ -157,10 +163,10 @@ if __name__ == "__main__":
     zro4 = np.loadtxt("resource/zeros.lam0e+00.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
     zros = np.stack([zro1, zro2, zro3, zro4], axis=1).transpose()
     zeros_plotter(zros, labels=[
-        r'$\lambda=1 \times 10^{-3}$',
-        r'$\lambda=5 \times 10^{-4}$',
-        r'$\lambda=1 \times 10^{-4}$',
-        r'$\lambda=0$ (without penalty)'],
+        r'$\delta=1 \times 10^{-3}$',
+        r'$\delta=5 \times 10^{-4}$',
+        r'$\delta=1 \times 10^{-4}$',
+        r'$\delta=0$ (without penalty)'],
         path="results/zeros.pdf")
 
     # PLOT CROSS-VALIDATION FOR LAMBDA
@@ -168,16 +174,16 @@ if __name__ == "__main__":
     zros = np.loadtxt("resource/cv_zeros.txt", delimiter=",")
     cv_plotter(errs, zros, np.linspace(-15, 0, num=31)[1:], path="results/cv.pdf")
 
-    # PLOT EMBEDDINGS
-    # dictionary
-    dict_name  = "resource/dict/2k.bigram.dict"
-    ngram_dict = corpora.Dictionary.load(dict_name)
-    # load embeddings
-    embeddings = np.loadtxt("resource/embeddings/reg.1e-3.lr.1e-3.2k.recon.txt", delimiter=",")
-    # convert to intensity
-    embeddings[embeddings < 1e-2] = 1e-5
-    intensity = (embeddings).std(axis=0)
-    intensity_plotter(intensity, ngram_dict)
+    # # PLOT EMBEDDINGS
+    # # dictionary
+    # dict_name  = "resource/dict/2k.bigram.dict"
+    # ngram_dict = corpora.Dictionary.load(dict_name)
+    # # load embeddings
+    # embeddings = np.loadtxt("resource/embeddings/reg.1e-3.lr.1e-3.2k.recon.txt", delimiter=",")
+    # # convert to intensity
+    # embeddings[embeddings < 1e-2] = 1e-5
+    # intensity = (embeddings).std(axis=0)
+    # intensity_plotter(intensity, ngram_dict)
 
-    # PLOT F-MEASURE BAR FOR EMBEDDINGS
-    bar_plotter()
+    # # PLOT F-MEASURE BAR FOR EMBEDDINGS
+    # bar_plotter()

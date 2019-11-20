@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     t   = 1e-2
     lam = 1e-3
-    lr  = 1e-3
+    lr  = 1e-2
     n_epoches = 20
 
     rbm = RegRBM(n_visible=n_x, n_hidden=1000, t=t, lam=lam, \
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     np.savetxt("resource/vars.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), nonzero_vars, delimiter=',')
     np.savetxt("resource/errors.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), errs, delimiter=',')
     np.savetxt("resource/zeros.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), zeros, delimiter=',')
-    np.savetxt("resource/embeddings/2k.embeddings.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), embeddings, delimiter=',')
+    np.savetxt("resource/2k.embeddings.lam%1.e.lr%1.e.t%1.e.epoch%d.txt" % (lam, lr, t, n_epoches), embeddings, delimiter=',')
     # vec2tsne(info_name, "results/test.pdf", vectors=embeddings, n=2)
