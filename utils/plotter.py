@@ -145,34 +145,34 @@ def bar_plotter(path="results/fscore.pdf"):
 if __name__ == "__main__":
     # PLOT ERROS AND ZEROS RESPECTIVELY
     # plot errors
-    err1 = np.loadtxt("resource/errors.lam1e-03.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    err2 = np.loadtxt("resource/errors.lam5e-04.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    err3 = np.loadtxt("resource/errors.lam1e-04.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    err4 = np.loadtxt("resource/errors.lam0e+00.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
+    err1 = np.loadtxt("resource/errors.lam1e-02.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    err2 = np.loadtxt("resource/errors.lam1e-03.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    err3 = np.loadtxt("resource/errors.lam1e-06.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    err4 = np.loadtxt("resource/errors.lam0e+00.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
     errs = np.stack([err1, err2, err3, err4], axis=1).transpose()
     error_plotter(errs, labels=[
+        r'$\delta=1 \times 10^{-2}$',
         r'$\delta=1 \times 10^{-3}$',
-        r'$\delta=5 \times 10^{-4}$',
-        r'$\delta=1 \times 10^{-4}$',
+        r'$\delta=1 \times 10^{-6}$',
         r'$\delta=0$ (without penalty)'],
-        path="results/errors.pdf")
+        path="results/new_errors.pdf")
     # plot zeros
-    zro1 = np.loadtxt("resource/zeros.lam1e-03.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    zro2 = np.loadtxt("resource/zeros.lam5e-04.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    zro3 = np.loadtxt("resource/zeros.lam1e-04.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
-    zro4 = np.loadtxt("resource/zeros.lam0e+00.lr1e-03.t1e-02.epoch20.txt", delimiter=",")
+    zro1 = np.loadtxt("resource/zeros.lam1e-02.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    zro2 = np.loadtxt("resource/zeros.lam1e-03.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    zro3 = np.loadtxt("resource/zeros.lam1e-06.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
+    zro4 = np.loadtxt("resource/zeros.lam0e+00.lr1e-02.t1e-02.epoch10.txt", delimiter=",")
     zros = np.stack([zro1, zro2, zro3, zro4], axis=1).transpose()
     zeros_plotter(zros, labels=[
+        r'$\delta=1 \times 10^{-2}$',
         r'$\delta=1 \times 10^{-3}$',
-        r'$\delta=5 \times 10^{-4}$',
-        r'$\delta=1 \times 10^{-4}$',
+        r'$\delta=1 \times 10^{-6}$',
         r'$\delta=0$ (without penalty)'],
-        path="results/zeros.pdf")
+        path="results/new_zeros.pdf")
 
     # PLOT CROSS-VALIDATION FOR LAMBDA
-    errs = np.loadtxt("resource/cv_errs.txt", delimiter=",")
-    zros = np.loadtxt("resource/cv_zeros.txt", delimiter=",")
-    cv_plotter(errs, zros, np.linspace(-15, 0, num=31)[1:], path="results/cv.pdf")
+    # errs = np.loadtxt("resource/cv_errs.txt", delimiter=",")
+    # zros = np.loadtxt("resource/cv_zeros.txt", delimiter=",")
+    # cv_plotter(errs, zros, np.linspace(-15, 0, num=31)[1:], path="results/cv.pdf")
 
     # # PLOT EMBEDDINGS
     # # dictionary

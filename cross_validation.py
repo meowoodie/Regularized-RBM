@@ -45,9 +45,9 @@ if __name__ == "__main__":
             x_train, x_test = data_x[train_index], data_x[test_index]
             # fit RegRBM and get score
             rbm = RegRBM(n_visible=n_x, n_hidden=1000, t=1e-2, lam=lam, \
-                         learning_rate=1e-3, momentum=0.95, err_function="mse", \
+                         learning_rate=1e-2, momentum=0.95, err_function="mse", \
                          sample_visible=False, sigma=1.)
-            rbm.fit(x_train, n_epoches=20, batch_size=20, \
+            rbm.fit(x_train, n_epoches=8, batch_size=20, \
                     shuffle=True, verbose=True)
             err  = rbm.get_err(x_test)
             zero = rbm.get_zero(x_test)
@@ -59,5 +59,5 @@ if __name__ == "__main__":
         zeros.append(k_fold_zero)
 
     # save score
-    np.savetxt("resource/cv_errs.txt", np.array(errs), delimiter=",")
-    np.savetxt("resource/cv_zeros.txt", np.array(zeros).astype(int), delimiter=",")
+    np.savetxt("resource/new_cv_errs.txt", np.array(errs), delimiter=",")
+    np.savetxt("resource/new_cv_zeros.txt", np.array(zeros).astype(int), delimiter=",")

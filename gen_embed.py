@@ -36,9 +36,9 @@ if __name__ == "__main__":
     print(data_x.shape)
 
     t   = 1e-2
-    lam = 1e-3
+    lam = 1e-2
     lr  = 1e-2
-    n_epoches = 20
+    n_epoches = 10
 
     rbm = RegRBM(n_visible=n_x, n_hidden=1000, t=t, lam=lam, \
                  learning_rate=lr, momentum=0.95, err_function="mse", \
